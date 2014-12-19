@@ -7,12 +7,18 @@
 
 const int KPropItemIndent   = 10;
 
+const COLORREF KColorHead  = RGBA(128,128,128,255);
+const COLORREF KColorGroup = RGBA(128,128,128,255);
+const COLORREF KColorItem  = RGBA(255,255,255,255);
+const COLORREF KColorItemSel  = RGBA(0,0,128,255);
+const COLORREF KColorBorder = RGBA(0,0,0,255);
+
 namespace SOUI
 {
     //////////////////////////////////////////////////////////////////////////
     void SPropertyGroup::DrawItem( IRenderTarget *pRT,CRect rc )
     {
-        pRT->FillSolidRect(rc,0xFF888888);
+        pRT->FillSolidRect(rc,KColorGroup);
     }
 
     
@@ -53,7 +59,7 @@ namespace SOUI
 
     SPropertyGrid::~SPropertyGrid(void)
     {
-        POSITION pos = m_lstGroup.GetHeadPosition();
+        SPOSITION pos = m_lstGroup.GetHeadPosition();
         while(pos)
         {
             SPropertyGroup * pGroup = m_lstGroup.GetNext(pos);
@@ -123,7 +129,7 @@ namespace SOUI
 
     BOOL SPropertyGrid::InsertGroup( SPropertyGroup * pGroup,SPropertyGroup* pInertAfter/*=IG_LAST*/ )
     {
-        POSITION pos = m_lstGroup.Find(pGroup);
+        SPOSITION pos = m_lstGroup.Find(pGroup);
         if(pos) return FALSE;
         if(pInertAfter == IG_FIRST)
         {
@@ -216,7 +222,7 @@ namespace SOUI
             SortItems(lstChilds);
         }
 
-        POSITION pos = lstChilds.GetHeadPosition();
+        SPOSITION pos = lstChilds.GetHeadPosition();
         while(pos)
         {
             IPropertyItem *pChild = lstChilds.GetNext(pos);
@@ -256,8 +262,8 @@ namespace SOUI
         rcSwitch.right = rcSwitch.left +rcSwitch.Height();
         rcNameBack.left = rcSwitch.right;
         rcNameBack.right = rcNameBack.left + m_nNameWidth;
-        pRT->FillSolidRect(rcSwitch,0xFF888888);
-        pRT->FillSolidRect(rcNameBack,iItem == SListBox::GetCurSel()? 0xFF880000:(pItem->IsGroup()?0xFF888888:0xffffffff));
+        pRT->FillSolidRect(rcSwitch,KColorGroup);
+        pRT->FillSolidRect(rcNameBack,iItem == SListBox::GetCurSel()? KColorItemSel:(pItem->IsGroup()?KColorGroup:KColorItem));
         int iLevel = pItem->GetLevel();
         if(iLevel>1) rcSwitch.OffsetRect(rcSwitch.Width()*(iLevel-1),0);
         if(pItem->ChildrenCount() && m_switchSkin)
@@ -279,17 +285,14 @@ namespace SOUI
         
         pItem->DrawItem(pRT,rcItem);
         
-        if(!pItem->IsGroup())
-        {
-            CAutoRefPtr<IPen> pen,oldPen;
-            pRT->CreatePen(PS_SOLID,0xff888888,1,&pen);
-            pRT->SelectObject(pen,(IRenderObj**)&oldPen);
-            CPoint pts[2]={CPoint(rc.left+rc.Height(),rc.bottom-1),CPoint(rc.right,rc.bottom-1)};
-            pRT->DrawLines(pts,2);
-            CPoint pts2[2]={CPoint(rcNameBack.right,rcNameBack.top),rcNameBack.BottomRight()};
-            pRT->DrawLines(pts2,2);
-            pRT->SelectObject(oldPen);
-        }
+        CAutoRefPtr<IPen> pen,oldPen;
+        pRT->CreatePen(PS_SOLID,KColorBorder,1,&pen);
+        pRT->SelectObject(pen,(IRenderObj**)&oldPen);
+        CPoint pts[2]={CPoint(rc.left+rc.Height(),rc.bottom-1),CPoint(rc.right,rc.bottom-1)};
+        pRT->DrawLines(pts,2);
+        CPoint pts2[2]={CPoint(rcNameBack.right,rcNameBack.top),rcNameBack.BottomRight()};
+        pRT->DrawLines(pts2,2);
+        pRT->SelectObject(oldPen);
 
     }
 
@@ -397,11 +400,11 @@ namespace SOUI
     void SPropertyGrid::SortItems( SList<IPropertyItem*> & lstItems )
     {
         SList<IPropertyItem*> lstCpy;
-        POSITION pos = lstItems.GetHeadPosition();
+        SPOSITION pos = lstItems.GetHeadPosition();
         while(pos)
         {
             IPropertyItem *pItem = lstItems.GetNext(pos);
-            POSITION pos2 = lstCpy.GetHeadPosition();
+            SPOSITION pos2 = lstCpy.GetHeadPosition();
             while(pos2)
             {
                 IPropertyItem* pItem2=lstCpy.GetAt(pos2);

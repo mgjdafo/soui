@@ -58,7 +58,7 @@ HSTREEITEM STreeBox::InsertItem(pugi::xml_node xmlNode,DWORD dwData,HSTREEITEM h
         if(pParentItem->m_bCollapsed || !pParentItem->m_bVisible) pItemObj->m_bVisible=FALSE;
         if(!GetChildItem(hParent) && m_xmlSwitch.first_child())
         {
-            SToggle *pToggle=new SToggle;
+            SToggle *pToggle= (SToggle*)SApplication::getSingleton().CreateWindowByName(SToggle::GetClassName());
             pToggle->SetContainer(pParentItem->GetContainer());
             pToggle->InitFromXml(m_xmlSwitch.first_child());
             pParentItem->InsertChild(pToggle);
@@ -73,7 +73,7 @@ HSTREEITEM STreeBox::InsertItem(pugi::xml_node xmlNode,DWORD dwData,HSTREEITEM h
     pItemObj->SetSkin(m_pItemSkin);
 
     HSTREEITEM hRet= CSTree<STreeItem*>::InsertItem(pItemObj,hParent,hInsertAfter);
-    pItemObj->m_hItem=hRet;
+    pItemObj->SetItemIndex((LPARAM)hRet);
 
     if(pItemObj->m_bVisible)
     {
@@ -125,7 +125,7 @@ BOOL STreeBox::RemoveItem(HSTREEITEM hItem)
         //去掉父节点的展开标志
         STreeItem *pParent=GetItem(hParent);
         pParent->m_bCollapsed=FALSE;
-        SWindow *pToggle=pParent->GetChild(IDC_SWITCH);
+        SWindow *pToggle=pParent->FindChildByID(IDC_SWITCH,1);
         SASSERT(pToggle);
         pParent->DestroyChild(pToggle);
         if(pParent->m_bVisible) InvalidateRect(pParent->GetItemRect());
@@ -225,7 +225,7 @@ BOOL STreeBox::Expand(HSTREEITEM hItem , UINT nCode)
         {
             if(m_xmlSwitch.first_child())
             {
-                SToggle *pSwitch=(SToggle*)pItem->GetChild(IDC_SWITCH);
+                SToggle *pSwitch=(SToggle*)pItem->FindChildByID(IDC_SWITCH,1);
                 SASSERT(pSwitch);
                 pSwitch->SetToggle(pItem->m_bCollapsed,FALSE);
             }
@@ -631,7 +631,7 @@ BOOL STreeBox::FireEvent(EventArgs &evt)
         {
             STreeItem *pItem=(STreeItem*)pEvt->pPanel;
             SASSERT(pItem);
-            Expand(pItem->m_hItem,TVE_TOGGLE);
+            Expand((HSTREEITEM)pItem->GetItemIndex(),TVE_TOGGLE);
             return TRUE;
         }
     }

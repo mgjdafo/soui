@@ -4,16 +4,8 @@
 #include <tom.h>
 #include "../soui/include/sapp.h"
 
-#define DEFINE_GUIDXXX(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
-	EXTERN_C const GUID CDECL name \
-	= { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 
-DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
-			   0x00,0xAA,0x00,0x47,0xBE,0x5D);
-
-using namespace SOUI;
-
-CImageOle::CImageOle(SRichEdit *pRichedit)
+CImageOle::CImageOle(SOUI::SRichEdit *pRichedit)
 :m_ulRef(0)
 ,m_pOleClientSite(NULL)
 ,m_pAdvSink(NULL)
@@ -48,25 +40,25 @@ HRESULT WINAPI CImageOle::QueryInterface(REFIID iid, void ** ppvObject)
 
 ULONG WINAPI CImageOle::AddRef(void)
 {
-	m_ulRef++;
-	return m_ulRef;
+	ULONG lRef = ::InterlockedIncrement(&m_ulRef);
+	return lRef;
 }
 
 ULONG WINAPI CImageOle::Release(void)
 {
-	if (--m_ulRef == 0)
+    ULONG lRef = ::InterlockedDecrement(&m_ulRef);
+	if (lRef == 0)
 	{
 		delete this;
-		return 0;
 	}
 
-	return m_ulRef;
+	return lRef;
 }
 
 HRESULT WINAPI CImageOle::SetClientSite(IOleClientSite *pClientSite)
 {
+    SASSERT(m_pOleClientSite == NULL);
 	m_pOleClientSite = pClientSite;
-	if(m_pOleClientSite) m_pOleClientSite->AddRef();
 	return S_OK;
 }
 
@@ -83,22 +75,10 @@ HRESULT WINAPI CImageOle::SetHostNames(LPCOLESTR szContainerApp, LPCOLESTR szCon
 
 HRESULT WINAPI CImageOle::Close(DWORD dwSaveOption)
 {
-	if(m_pOleClientSite)
-	{
-		m_pOleClientSite->Release();
-		m_pOleClientSite = NULL;
-	}
-	if (m_pAdvSink != NULL)
-	{
-		m_pAdvSink->Release();
-		m_pAdvSink = NULL;
-	}
-	if(m_pSkin)
-	{
-		m_pSkin->Release();
-		m_pSkin=NULL;
-	}
-
+    m_pOleClientSite = NULL;
+    m_pAdvSink = NULL;
+    m_pSkin=NULL;
+    
 	m_pRichedit->GetContainer()->UnregisterTimelineHandler(this);
 
 	return S_OK;
@@ -146,7 +126,7 @@ HRESULT WINAPI CImageOle::IsUpToDate(void)
 
 HRESULT WINAPI CImageOle::GetUserClassID(CLSID *pClsid)
 {
-	*pClsid = IID_NULL;
+	*pClsid = __uuidof(CImageOle);
 	return S_OK;
 }
 
@@ -206,7 +186,7 @@ HRESULT WINAPI CImageOle::Draw(DWORD dwDrawAspect, LONG lindex, void *pvAspect,
 	rcItem.top    = lprcBounds->top;
 	rcItem.right  = lprcBounds->right;
 	rcItem.bottom = lprcBounds->bottom;
-
+    m_rcObj =rcItem;
 	if(m_pSkin)
 	{
 	    SOUI::IRenderTarget * pRT =NULL;
@@ -218,7 +198,7 @@ HRESULT WINAPI CImageOle::Draw(DWORD dwDrawAspect, LONG lindex, void *pvAspect,
             ::BitBlt(hdcSrc,0,0,rc2.right,rc2.bottom,hdcDraw,rcItem.left,rcItem.top,SRCCOPY);
             if(m_pSkin->IsClass(SSkinGif::GetClassName()))
             {
-                SSkinGif *pSkinGif=static_cast<SSkinGif*>(m_pSkin);
+                SSkinGif *pSkinGif=static_cast<SSkinGif*>((ISkinObj*)m_pSkin);
                 pSkinGif->Draw(pRT,&rc2,m_iFrame);
             }else
             {
@@ -251,22 +231,14 @@ HRESULT WINAPI CImageOle::Unfreeze(DWORD dwFreeze)
 
 HRESULT WINAPI CImageOle::SetAdvise(DWORD aspects, DWORD advf, IAdviseSink *pAdvSink)
 {
-	if (pAdvSink != NULL)
+	if (aspects == DVASPECT_CONTENT && pAdvSink != NULL)
 	{
 		m_pAdvSink = pAdvSink;
-		m_pAdvSink->AddRef();
-	}
-
-	if (m_pSkin != NULL && m_pSkin->IsClass(SSkinGif::GetClassName()))
+        return S_OK;
+	}else
 	{
-		SSkinGif *pGif=static_cast<SSkinGif*>(m_pSkin);
-		m_iFrame=0;
-		m_nTimeDelay=pGif->GetFrameDelay(0);
-		m_nTimePass=0;
-		m_pRichedit->GetContainer()->RegisterTimelineHandler(this);
+	    return E_INVALIDARG;
 	}
-
-	return S_OK;
 }
 
 HRESULT WINAPI CImageOle::GetAdvise(DWORD *pAspects, DWORD *pAdvf, IAdviseSink **ppAdvSink)
@@ -290,83 +262,15 @@ HRESULT WINAPI CImageOle::GetExtent(DWORD dwDrawAspect, LONG lindex, DVTARGETDEV
 }
 
 
-void CImageOle::SetDuiSkinObj( ISkinObj *pSkin )
+void CImageOle::SetSkinObj( ISkinObj *pSkin )
 {
-	if(m_pSkin)
-	{
-		m_pSkin->Release();
-	}
-	m_pSkin=pSkin;
-	if(m_pSkin)
-	{
-		m_pSkin->AddRef();
-	}
-}
-
-//需要用枚举的办法来获得指定OLE的显示位置，不知道有没有其它更好的办法。
-BOOL CImageOle::GetOleRect( LPRECT lpRect )
-{
-	IRichEditOle *pRichEditOle=NULL;
-	LRESULT lRes=m_pRichedit->SSendMessage(EM_GETOLEINTERFACE,0,(LPARAM)&pRichEditOle);
-	if(!pRichEditOle) return FALSE;
-
-	BOOL bRet=FALSE;
-
-	int nObjCount = pRichEditOle->GetObjectCount();
-	int i = 0;
-	for (i = 0;i < nObjCount;i++)
-	{	
-		REOBJECT reo;
-		ZeroMemory(&reo, sizeof(REOBJECT));
-		reo.cbStruct = sizeof(REOBJECT);
-
-		HRESULT hr = pRichEditOle->GetObject(i, &reo, REO_GETOBJ_POLEOBJ);
-		if (hr != S_OK)
-			continue;
-
-		reo.poleobj->Release();
-
-		if (reo.poleobj == (IOleObject *)this)
-		{
-
-			ITextDocument *pTextDocument = NULL;
-			ITextRange *pTextRange = NULL;
-
-			pRichEditOle->QueryInterface(IID_ITextDocument, (void **)&pTextDocument);
-			if (!pTextDocument)
-				break;
-
-			long nLeft = 0;
-			long nBottom = 0;
-			pTextDocument->Range(reo.cp, reo.cp, &pTextRange);
-			if (reo.dwFlags & REO_BELOWBASELINE)
-				hr = pTextRange->GetPoint(TA_BOTTOM|TA_LEFT, &nLeft, &nBottom);
-			else
-				hr = pTextRange->GetPoint(TA_BASELINE|TA_LEFT, &nLeft, &nBottom);
-
-            if(hr!=S_OK)
-            {
-                DWORD dwErr=GetLastError();
-            }
-			pTextDocument->Release();
-			pTextRange->Release();
-
-			CRect rcRichedit;
-			GetWindowRect(m_pRichedit->GetContainer()->GetHostHwnd(),&rcRichedit);
-			CSize szOle=m_pSkin->GetSkinSize();
-
-			lpRect->left   = nLeft - rcRichedit.left;
-			lpRect->bottom = nBottom - rcRichedit.top;
-			lpRect->right  = lpRect->left + szOle.cx ;
-			lpRect->top    = lpRect->bottom - szOle.cy;
-
-			bRet=TRUE;
-			break;
-		}
-	}
-
-	pRichEditOle->Release();
-	return bRet;
+    m_pSkin=pSkin;
+    if(m_pSkin->IsClass(SSkinAni::GetClassName()))
+    {
+        m_iFrame=-1;
+        m_nTimeDelay=0;
+        OnNextFrame();
+    }
 }
 
 void CImageOle::OnNextFrame()
@@ -374,13 +278,7 @@ void CImageOle::OnNextFrame()
 	m_nTimePass+=10;
 	if(m_nTimePass>=m_nTimeDelay)
 	{
-		CRect rcOle;
-		if(GetOleRect(&rcOle))
-		{
-			m_pRichedit->InvalidateRect(rcOle);
-		}
-
-		SSkinGif *pSkinGif=static_cast<SSkinGif*>(m_pSkin);
+		SSkinAni *pSkinGif=static_cast<SSkinAni*>((ISkinObj*)m_pSkin);
 		SASSERT(pSkinGif);
 		m_iFrame++;
 		if(m_iFrame==pSkinGif->GetStates())
@@ -388,84 +286,243 @@ void CImageOle::OnNextFrame()
 
 		m_nTimeDelay=pSkinGif->GetFrameDelay(m_iFrame)*10;
 		m_nTimePass=0;
+		
+		m_pRichedit->InvalidateRect(m_rcObj);
 	}
 }
 
-BOOL RichEdit_InsertSkin(SRichEdit *pRicheditCtrl, ISkinObj *pSkin)
+CImageOle * CImageOle::CreateObject( SOUI::SRichEdit *pRichedit )
 {
+    return new CImageOle(pRichedit);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// SIRichEditOleCallback_Impl
+SRichEditOleCallback_Impl::SRichEditOleCallback_Impl(SOUI::SRichEdit *pRicheditCtrl) :m_dwRef(1), m_iNumStorages(0), m_pRicheditCtrl(pRicheditCtrl)
+{
+    HRESULT hResult = ::StgCreateDocfile(NULL,
+        STGM_TRANSACTED | STGM_READWRITE | STGM_SHARE_EXCLUSIVE |STGM_CREATE ,
+        0, &m_pStorage );
+    SASSERT(SUCCEEDED(hResult));
+}
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::GetNewStorage(LPSTORAGE* lplpstg)
+{
+    m_iNumStorages++;
+    WCHAR tName[50];
+    swprintf(tName, L"REOLEStorage%d", m_iNumStorages);
+
+    HRESULT hResult = m_pStorage->CreateStorage(tName, 
+        STGM_TRANSACTED | STGM_READWRITE | STGM_SHARE_EXCLUSIVE | STGM_CREATE ,
+        0, 0, lplpstg );
+
+    return hResult;
+}
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::QueryInterface(REFIID iid, void ** ppvObject)
+{
+
+    HRESULT hr = S_OK;
+    *ppvObject = NULL;
+
+    if ( iid == IID_IUnknown ||
+        iid == IID_IRichEditOleCallback )
+    {
+        *ppvObject = this;
+        AddRef();
+        hr = NOERROR;
+    }
+    else
+    {
+        hr = E_NOINTERFACE;
+    }
+
+    return hr;
+}
+
+
+
+ULONG STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::AddRef()
+{
+    return ++m_dwRef;
+}
+
+
+
+ULONG STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::Release()
+{
+    if ( --m_dwRef == 0 )
+    {
+        delete this;
+        return 0;
+    }
+
+    return m_dwRef;
+}
+
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::GetInPlaceContext(LPOLEINPLACEFRAME FAR *lplpFrame,
+                                                            LPOLEINPLACEUIWINDOW FAR *lplpDoc, LPOLEINPLACEFRAMEINFO lpFrameInfo)
+{
+    return S_OK;
+}
+
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::ShowContainerUI(BOOL fShow)
+{
+    return S_OK;
+}
+
+
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::QueryInsertObject(LPCLSID lpclsid, LPSTORAGE lpstg, LONG cp)
+{
+    return S_OK;
+}
+
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::DeleteObject(LPOLEOBJECT lpoleobj)
+{
+    return S_OK;
+}
+
+
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::QueryAcceptData(LPDATAOBJECT lpdataobj, CLIPFORMAT FAR *lpcfFormat,
+                                                          DWORD reco, BOOL fReally, HGLOBAL hMetaPict)
+{
+    return S_OK;
+}
+
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::ContextSensitiveHelp(BOOL fEnterMode)
+{
+    return S_OK;
+}
+
+
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::GetClipboardData(CHARRANGE FAR *lpchrg, DWORD reco, LPDATAOBJECT FAR *lplpdataobj)
+{
+    return E_NOTIMPL;
+}
+
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::GetDragDropEffect(BOOL fDrag, DWORD grfKeyState, LPDWORD pdwEffect)
+{
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE 
+SRichEditOleCallback_Impl::GetContextMenu(WORD seltyp, LPOLEOBJECT lpoleobj, CHARRANGE FAR *lpchrg,
+                                                         HMENU FAR *lphmenu)
+{
+    return S_OK;
+}
+
+SRichEditOleCallback_Impl * SRichEditOleCallback_Impl::CreateObject(SOUI::SRichEdit *pRicheditCtrl)
+{
+	return new SRichEditOleCallback_Impl(pRicheditCtrl);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// global functions
+BOOL RichEdit_InsertSkin(SOUI::SRichEdit *pRicheditCtrl, SOUI::ISkinObj *pSkin)
+{
+    SASSERT(pSkin && pRicheditCtrl);
+    
 	IRichEditOle *pRichEditOle=NULL;
 	LRESULT lRes=pRicheditCtrl->SSendMessage(EM_GETOLEINTERFACE,0,(LPARAM)&pRichEditOle);
 	if(!pRichEditOle) return FALSE;
 
-	SCODE sc;
 	IOleClientSite *pOleClientSite = NULL;
 	pRichEditOle->GetClientSite(&pOleClientSite);
 	if (NULL == pOleClientSite)
 		return FALSE;
 
-	IStorage *pStorage = NULL;
+    CAutoRefPtr<IStorage> lpStorage = NULL;        //存储接口
+    CAutoRefPtr<ILockBytes> lpLockBytes = NULL;
 
-	LPLOCKBYTES lpLockBytes = NULL;
-	sc = ::CreateILockBytesOnHGlobal(NULL, TRUE, &lpLockBytes);
-	if (sc != S_OK)
-		return FALSE;
+    HRESULT hr = ::CreateILockBytesOnHGlobal(NULL,TRUE,&lpLockBytes); //创建LOCKBYTE对象
+    if (FAILED(hr))
+    {
+        return FALSE;
+    }
+    SASSERT(lpLockBytes != NULL);
+    hr = ::StgCreateDocfileOnILockBytes(lpLockBytes,
+        STGM_SHARE_EXCLUSIVE | STGM_CREATE | STGM_READWRITE,
+        0,&lpStorage);
+    if (FAILED(hr))
+    {
+        return FALSE;
+    }
 
-	sc = ::StgCreateDocfileOnILockBytes(lpLockBytes,
-		STGM_SHARE_EXCLUSIVE|STGM_CREATE|STGM_READWRITE, 0, &pStorage);
-	if (sc != S_OK)
-	{
-		lpLockBytes->Release();
-		lpLockBytes = NULL;
-		return FALSE;
-	}
-
-
-	CImageOle *pImageOle = new CImageOle(pRicheditCtrl);
+	CImageOle *pImageOle = CImageOle::CreateObject(pRicheditCtrl);
 	if (NULL == pImageOle)
 		return FALSE;
 
-	pImageOle->SetDuiSkinObj(pSkin);
+	pImageOle->SetSkinObj(pSkin);
 
 	IOleObject *pOleObject = NULL;
 	pImageOle->QueryInterface(IID_IOleObject, (void **)&pOleObject);
 	if (NULL == pOleObject)
 	{
-		delete pImageOle;
+		pImageOle->Release();
 		return FALSE;
 	}
 
+
 	pImageOle->SetClientSite(pOleClientSite);
 
-	HRESULT hr = ::OleSetContainedObject(pOleObject, TRUE);
+	hr = ::OleSetContainedObject(pOleObject, TRUE);
 
 	REOBJECT reobject = {0};
 	reobject.cbStruct = sizeof(REOBJECT);
-	reobject.clsid    = CLSID_NULL;
+	reobject.clsid    = __uuidof(CImageOle);
 	reobject.cp       = REO_CP_SELECTION;
 	reobject.dvaspect = DVASPECT_CONTENT;
+    reobject.dwFlags  = REO_BELOWBASELINE;
 	reobject.poleobj  = pOleObject;
 	reobject.polesite = pOleClientSite;
-	reobject.pstg     = pStorage;
 	reobject.dwUser   = 0;
-
+    reobject.pstg = lpStorage;
+    lpStorage->AddRef();
+    
 	pRichEditOle->InsertObject(&reobject);
+
+    if (pSkin->IsClass(SSkinAni::GetClassName()))
+    {
+        pRicheditCtrl->GetContainer()->RegisterTimelineHandler(pImageOle);
+    }
 
 	pOleObject->Release();
 	pOleClientSite->Release();
-	pStorage->Release();
 	pRichEditOle->Release();
 
 	return TRUE;
 }
 
-BOOL RichEdit_InsertImage(SRichEdit *pRicheditCtrl, LPCTSTR lpszFileName)
+BOOL RichEdit_InsertImage(SOUI::SRichEdit *pRicheditCtrl, LPCTSTR lpszFileName)
 {
     SStringW key=S_CT2W(lpszFileName);
-    SSkinPool *pBuiltinSkinPool = SSkinPoolMgr::getSingletonPtr()->GetBuiltinSkinPool();
-    ISkinObj *pSkin=pBuiltinSkinPool->GetSkin(key);
+    SOUI::SSkinPool *pBuiltinSkinPool = SOUI::SSkinPoolMgr::getSingletonPtr()->GetBuiltinSkinPool();
+    SOUI::ISkinObj *pSkin=pBuiltinSkinPool->GetSkin(key);
     if(!pSkin)
     {
-        SSkinGif *pGifSkin = (SSkinGif*)SApplication::getSingleton().CreateSkinByName(SSkinGif::GetClassName());
+        SOUI::SSkinGif *pGifSkin = (SOUI::SSkinGif*)SOUI::SApplication::getSingleton().CreateSkinByName(SSkinGif::GetClassName());
         if(!pGifSkin) return FALSE;
         if(0==pGifSkin->LoadFromFile(lpszFileName))
         {
@@ -477,4 +534,12 @@ BOOL RichEdit_InsertImage(SRichEdit *pRicheditCtrl, LPCTSTR lpszFileName)
         pSkin = pGifSkin;
     }
     return RichEdit_InsertSkin(pRicheditCtrl,pSkin);
+}
+
+BOOL RichEdit_SetOleCallback( SOUI::SRichEdit *pRicheditCtrl )
+{
+	SRichEditOleCallback_Impl * pReCB = SRichEditOleCallback_Impl::CreateObject(pRicheditCtrl);
+    pRicheditCtrl->SSendMessage(EM_SETOLECALLBACK,0,(LPARAM)(IRichEditOleCallback*)pReCB);
+    pReCB->Release();
+    return TRUE;
 }

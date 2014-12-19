@@ -6,6 +6,7 @@
 #include "MainDlg.h"
 #include "helper/SMenu.h"
 #include "../controls.extend/FileHelper.h"
+#include "skinole\ImageOle.h"
 
 #include <dwmapi.h>
 #pragma comment(lib,"dwmapi.lib")
@@ -263,6 +264,14 @@ LRESULT CMainDlg::OnInitDialog( HWND hWnd, LPARAM lParam )
         RegisterDragDrop(pEdit1->GetSwnd(),new CTestDropTarget1(pEdit1));
         RegisterDragDrop(pEdit2->GetSwnd(),new CTestDropTarget1(pEdit2));
     }
+    
+    SRichEdit *pEdit = FindChildByName2<SRichEdit>(L"re_gifhost");
+    if(pEdit)
+    {
+        RichEdit_SetOleCallback(pEdit);
+        pEdit->SetAttribute(L"rtf",L"rtf:rtf_test");
+    }
+
     return 0;
 }
 
@@ -346,7 +355,6 @@ void CMainDlg::OnBtnHideTest()
     if(pBtn) pBtn->SetVisible(FALSE,TRUE);
 }
 
-#include "skinole\ImageOle.h"
 
 void CMainDlg::OnBtnInsertGif2RE()
 {
@@ -386,7 +394,7 @@ void CMainDlg::OnSkiaTest()
         SWindow *pCanvas = FindChildByName(L"skia_canvas");
         if(pCanvas)
         {
-            IRenderTarget* pRTDst= pCanvas->GetRenderTarget();
+            IRenderTarget* pRTDst= pCanvas->GetRenderTarget(0,2);
             CRect rcCanvas;
             pCanvas->GetWindowRect(&rcCanvas);
             
@@ -407,5 +415,31 @@ void CMainDlg::OnSkiaTest()
     }else
     {
         SMessageBox(NULL,_T("当前使用的渲染引擎不是skia"),_T("错误"),MB_OK|MB_ICONSTOP);
+    }
+}
+
+void CMainDlg::OnListBoxExEvent( EventArgs *pEvt )
+{
+    EventOfPanel *pEvtOfPanel = (EventOfPanel*)pEvt;
+    if(pEvtOfPanel->pOrgEvt->GetEventID() == EventCmd::EventID
+        && pEvtOfPanel->pOrgEvt->sender->IsClass(SButton::GetClassName()))
+    {
+        int iItem = pEvtOfPanel->pPanel->GetItemIndex();
+        SStringT strMsg;
+        strMsg.Format(_T("收到列表项:%d中的name为%s的窗口点击事件"),iItem,S_CW2T(pEvtOfPanel->pOrgEvt->nameFrom));
+        SMessageBox(m_hWnd,strMsg,_T("EVENTOFPANEL"),MB_OK|MB_ICONEXCLAMATION);        
+    }
+}
+
+void CMainDlg::OnTreeBoxEvent( EventArgs *pEvt )
+{
+    EventOfPanel *pEvtOfPanel = (EventOfPanel*)pEvt;
+    if(pEvtOfPanel->pOrgEvt->GetEventID() == EventCmd::EventID
+        && pEvtOfPanel->pOrgEvt->sender->IsClass(SButton::GetClassName()))
+    {
+        HSTREEITEM hItem = (HSTREEITEM)pEvtOfPanel->pPanel->GetItemIndex();
+        SStringT strMsg;
+        strMsg.Format(_T("收到treebox item:0x%08x中的name为%s的窗口点击事件"),hItem,S_CW2T(pEvtOfPanel->pOrgEvt->nameFrom));
+        SMessageBox(m_hWnd,strMsg,_T("EVENTOFPANEL"),MB_OK|MB_ICONEXCLAMATION);        
     }
 }

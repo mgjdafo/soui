@@ -42,7 +42,7 @@ BOOL SComboEdit::FireEvent(EventArgs & evt)
         evt.idFrom=GetOwner()->GetID();
         evt.nameFrom=GetOwner()->GetName();
     }
-    return __super::FireEvent(evt);
+    return SEdit::FireEvent(evt);
 }
 
 
@@ -79,6 +79,8 @@ BOOL SComboBoxBase::CreateChildren( pugi::xml_node xmlNode )
     {
         SIZE szBtn=m_pSkinBtn->GetSkinSize();
         m_pEdit=new SComboEdit(this);
+        SApplication::getSingleton().SetSwndDefAttr(m_pEdit);
+        
         InsertChild(m_pEdit);
         pugi::xml_node xmlEditStyle=xmlNode.child(L"editstyle");
         m_pEdit->GetEventSet()->setMutedState(true);
@@ -299,13 +301,15 @@ void SComboBoxBase::CloseUp()
     }
 }
 
-void SComboBoxBase::SetFocus()
+
+void SComboBoxBase::OnSetFocus()
 {
-	if(m_pEdit) 
-		m_pEdit->SetFocus();
-	else
-		__super::SetFocus();
+    if(m_pEdit) 
+        m_pEdit->SetFocus();
+    else
+        __super::OnSetFocus();
 }
+
 
 void SComboBoxBase::OnDestroy()
 {
@@ -315,7 +319,7 @@ void SComboBoxBase::OnDestroy()
 
 void SComboBoxBase::OnSelChanged()
 {
-    EventCBSelChange evt(this);
+    EventCBSelChange evt(this,GetCurSel());
     FireEvent(evt);
 }
 
@@ -332,6 +336,26 @@ BOOL SComboBoxBase::FireEvent( EventArgs &evt )
         }
     }
     return SWindow::FireEvent(evt);
+}
+
+int SComboBoxBase::FindString( LPCTSTR pszFind,int nAfter/*=0*/ )
+{
+    for(int i=nAfter;i<GetCount();i++)
+    {
+        SStringT strItem = GetLBText(i);
+        if(strItem == pszFind) return i;
+    }
+    return -1;
+}
+
+SStringT SComboBoxBase::GetWindowText()
+{
+    if(!m_bDropdown)
+    {
+        return GetEditText();
+    }
+    if(GetCurSel()==-1) return _T("");
+    return GetLBText(GetCurSel());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -354,7 +378,7 @@ BOOL SComboBox::CreateListBox( pugi::xml_node xmlNode )
 {
     SASSERT(xmlNode);
     //创建列表控件
-    m_pListBox=new SListBox;
+    m_pListBox=(SListBox*)SApplication::getSingleton().CreateWindowByName(SListBox::GetClassName());
     m_pListBox->SetContainer(GetContainer());
 
     m_pListBox->InitFromXml(xmlNode.child(L"liststyle"));
@@ -422,7 +446,7 @@ void SComboBox::OnSelChanged()
     {
         SStringT strText=GetLBText(m_pListBox->GetCurSel());
         m_pEdit->GetEventSet()->setMutedState(true);
-        m_pEdit->SetWindowText(S_CT2W(strText));
+        m_pEdit->SetWindowText(strText);
         m_pEdit->GetEventSet()->setMutedState(false);
     }
     Invalidate();
@@ -431,10 +455,8 @@ void SComboBox::OnSelChanged()
 
 BOOL SComboBox::FireEvent( EventArgs &evt )
 {
-    if(evt.idFrom == IDC_DROPDOWN_LIST)
+    if(evt.idFrom == IDC_DROPDOWN_LIST && m_pDropDownWnd)
     {
-        SASSERT(m_pDropDownWnd);
-
         if(evt.GetEventID()==EventLBSelChanged::EventID)
         {
             OnSelChanged();
@@ -469,7 +491,7 @@ BOOL SComboBoxEx::CreateListBox( pugi::xml_node xmlNode )
 {
     SASSERT(xmlNode);
     //创建列表控件
-    m_pListBox=new SListBoxEx;
+    m_pListBox=(SListBoxEx*)SApplication::getSingleton().CreateWindowByName(SListBoxEx::GetClassName());
     m_pListBox->SetContainer(GetContainer());
 
     m_pListBox->InitFromXml(xmlNode.child(L"liststyle"));
@@ -565,7 +587,7 @@ void SComboBoxEx::OnSelChanged()
     {
         SStringT strText=GetLBText(iSel);
         m_pEdit->GetEventSet()->setMutedState(true);
-        m_pEdit->SetWindowText(S_CT2W(strText));
+        m_pEdit->SetWindowText(strText);
         m_pEdit->GetEventSet()->setMutedState(false);
     }
     Invalidate();
@@ -574,10 +596,8 @@ void SComboBoxEx::OnSelChanged()
 
 BOOL SComboBoxEx::FireEvent( EventArgs &evt )
 {
-    if(evt.idFrom == IDC_DROPDOWN_LIST)
+    if(evt.idFrom == IDC_DROPDOWN_LIST && m_pDropDownWnd)
     {
-        SASSERT(m_pDropDownWnd);
-
         if(evt.GetEventID()==EventLBSelChanged::EventID)
         {//列表选中项改变事件
             OnSelChanged();
@@ -601,6 +621,14 @@ BOOL SComboBoxEx::FireEvent( EventArgs &evt )
     return SComboBoxBase::FireEvent(evt);
 }
 
+SStringT SComboBoxEx::GetLBText( int iItem )
+{
+    if(m_uTxtID == 0 || iItem<0 || iItem>= GetCount()) return _T("");
+    SWindow *pItem=m_pListBox->GetItemPanel(iItem);
+    SWindow *pText=pItem->FindChildByID(m_uTxtID);
+    if(!pText) return _T("");
+    return pText->GetWindowText();
+}
 
 }//namespace SOUI
 

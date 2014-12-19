@@ -98,6 +98,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*
 
         //创建一个http服务器，用来从资源中加载flash
         CMemFlash   memFlash;
+
         CHTTPServer flashSvr(&memFlash);
         flashSvr.Start(CMemFlash::HomeDir(),"",82,0);
 
@@ -183,6 +184,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*
     }
     delete pComMgr;
     OleUninitialize();
+
     return nRet;
 }
 

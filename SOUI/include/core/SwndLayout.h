@@ -16,13 +16,13 @@
 namespace SOUI
 {
 
-#define POSFLAG_REFCENTER      '|'        //参考父窗口中心
-#define POSFLAG_REFPREV_NEAR   '['        //参考前一个兄弟窗口与自己近的边
-#define POSFLAG_REFNEXT_NEAR   ']'        //参考下一个兄弟窗口与自己近的边
-#define POSFLAG_REFPREV_FAR    '{'        //参考前一个兄弟窗口与自己远的边
-#define POSFLAG_REFNEXT_FAR    '}'        //参考下一个兄弟窗口与自己远的边
-#define POSFLAG_PERCENT        '%'        //采用在父窗口的百分比定义坐标
-#define POSFLAG_DEFSIZE        '@'        //在pos属性中定义窗口的size，只在在定义x2,y2时有效
+    #define POSFLAG_REFCENTER      '|'        //参考父窗口中心
+    #define POSFLAG_REFPREV_NEAR   '['        //参考前一个兄弟窗口与自己近的边
+    #define POSFLAG_REFNEXT_NEAR   ']'        //参考下一个兄弟窗口与自己近的边
+    #define POSFLAG_REFPREV_FAR    '{'        //参考前一个兄弟窗口与自己远的边
+    #define POSFLAG_REFNEXT_FAR    '}'        //参考下一个兄弟窗口与自己远的边
+    #define POSFLAG_PERCENT        '%'        //采用在父窗口的百分比定义坐标
+    #define POSFLAG_DEFSIZE        '@'        //在pos属性中定义窗口的size，只在在定义x2,y2时有效
 
     enum
     {
@@ -67,23 +67,25 @@ namespace SOUI
         float  nPos;
     };
 
-    typedef enum tagPOS2TYPE{
-        POS2_LEFTTOP=0,    //左上角
-        POS2_MIDTOP,
-        POS2_RIGHTTOP,    //右上争
-        POS2_LEFTMID,
-        POS2_CENTER,    //中心
-        POS2_RIGHTMID,
-        POS2_LEFTBOTTOM,//左下角
-        POS2_MIDBOTTOM,
-        POS2_RIGHTBOTTOM,//右下角
-    }POS2TYPE;
-
     class SWindow;
+    
+    class SWindowRepos
+    {
+    public:
+        explicit SWindowRepos(SWindow *pWnd);
+        ~SWindowRepos();
+        SWindow * GetWindow(){return m_pWnd;}
+    protected:
+        SWindow * m_pWnd;
+        CRect     m_rcWnd;
+    };
+    
     class SOUI_EXP SwndLayout
     {
     public:
         SwndLayout(SWindow *pOwner);
+        
+        void InitLayoutState();
         
         /**
          * ParseStrPostion
@@ -99,24 +101,25 @@ namespace SOUI
         /**
          * CalcPosition
          * @brief    计算窗口坐标
-         * @param    LPRECT prcContainer --  容器位置
+         * @param   const CRect & rcContainer --  容器位置
          * @param  [out]  CRect & rcWindow --  窗口矩形
-         * @return   int 计算得到的坐标个数
+         * @return   int 需要等待计算的坐标数(<=4)
          *
          * Describe  每个窗口包含4个坐标，由于一个坐标可能依赖于其它兄弟窗口的布局，一次计算可能不能全部得到4个坐标
          */
-        int CalcPosition(LPRECT prcContainer,CRect &rcWindow);
+        int CalcPosition(const CRect & rcContainer,CRect &rcWindow);
 
 
         /**
          * CalcChildrenPosition
          * @brief    计算列表中子窗口的坐标
          * @param    SList<SWindow * > * pListChildren --  子窗口列表
+         * @param    const CRect & rcContainer --  容器坐标
          * @return   BOOL TRUE-成功，FALSE-失败，可能由于布局依赖形成死锁
          *
          * Describe  
          */
-        BOOL CalcChildrenPosition(SList<SWindow*> *pListChildren);
+        BOOL CalcChildrenPosition(SList<SWindowRepos*> *pListChildren,const CRect & rcContainer);
         
         /**
          * IsFitContent
@@ -166,12 +169,22 @@ namespace SOUI
         /**
          * CalcSize
          * @brief    计算窗口大小
-         * @param    LPRECT pRcContainer --  容器位置
+         * @param   const CRect & rcContainer --  容器位置
          * @return   CSize 
          *
          * Describe  
          */
-        CSize CalcSize(LPRECT pRcContainer);
+        CSize CalcSize(const CRect & rcContainer);
+        
+        /**
+         * GetWindowLayoutRect
+         * @brief    获得一个窗口布局占用的位置
+         * @param    SWindow * pWindow --  
+         * @return   CRect 
+         *
+         * Describe  
+         */
+        CRect GetWindowLayoutRect(SWindow *pWindow);
 
         SWindow *m_pOwner;  //**< layout的宿主 */
         
@@ -189,7 +202,7 @@ namespace SOUI
             POSITION_ITEM Item[4];
         };
         UINT uPositionType;       /**< 坐标属性 */
-        POS2TYPE pos2Type;        /**< 指定2点坐标时，坐标类型 */
+        float fOffsetX,fOffsetY;  /**< 窗口坐标偏移量, x += fOffsetX * width, y += fOffsetY * height  */
         UINT uSpecifyWidth;       /**< 指定的宽度 */
         UINT uSpecifyHeight;      /**< 指定的高度 */
         int  nSepSpace;           /**< 窗口水平自动排版的水平间隔，不支持垂直方向的自动排版 */

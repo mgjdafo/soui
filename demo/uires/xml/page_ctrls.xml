@@ -2,7 +2,7 @@
   <tabctrl pos="0,0,-0,-0" tabAlign="left" tabSkin="skin_tab_left" tabInterSkin="skin_tab_left_splitter" tabInterSize="2" tabWidth="200" iconSkin="skin_small_icons" icon-x="5" icon-y="8" colorText="#000000bb">
     <page title="listctrl">
       <listctrl name="lc_test" pos="10,0,-10,-10" itemHeight="20" headerHeight="30" cursor="CUR_TST">
-        <header align="left" itemSwapEnable="1" fixWidth="1" sortHeader="1">
+        <header align="left" itemSwapEnable="1" fixWidth="0" sortHeader="1">
           <items>
             <item width="150">name</item>
             <item width="150">gender</item>
@@ -26,7 +26,7 @@
       </window>
       <text pos="50,[5">richedit:</text>
       <button name="btn_insert_gif" height="25">insert gif to richedit</button>
-      <richedit name="re_gifhost" pos="50,[5,-5,-5" class="cls_edit" multiLines="1" vscrollBar="1" wordWrap="1"  autoVscroll="1" hscrollBar="0" wantReturn="1"  rtf="rtf:rtf_test">this is a richedit.中文也可以初始化。</richedit>
+      <richedit name="re_gifhost" pos="50,[5,-5,-5" class="cls_edit" enableDragdrop="1" multiLines="1" vscrollBar="1" wordWrap="1"  autoVscroll="1" hscrollBar="0" wantReturn="1"  rtf="rtf:rtf_test">this is a richedit.中文也可以初始化。</richedit>
     </page>
     <page title="buttons" colorBorder="#ff0000" margin-x="1" margin-y="1">
       <button name="btn_msgbox" pos="10,50" width="200" height="30" accel="ctrl+alt+f9" animate="1">show msg box</button>
@@ -69,7 +69,7 @@
       </splitrow>
     </page>
     <page title="combobox and listbox">
-      <combobox name="cbx_test" pos="10,50,200,74" dropDown="1" dropHeight="100" class="cls_edit" dotted="0" animateTime="200" curSel="2">
+      <combobox name="cbx_test" pos="10,50,200,74"  dropDown="1" dropHeight="100" class="cls_edit" dotted="0" animateTime="200" curSel="2">
         <liststyle class="cls_edit"  iconSkin="skin_menuicon" itemHeight="30" colorText="#000000" colorSelText="#FFFFFF" colorItemBkgnd="#FFFFFF" colorItemSelBkgnd="#000088"/>
         <editstyle inset="5,0,5,0" colorText="#000000" align="left" colorBkgnd="#FFFFFF"/>
         <items>
@@ -94,7 +94,7 @@
       </listbox>
     </page>
     <page title="comboboxex">
-      <comboboxex show="1" pos="10,10,250,40" dropDown="1" dropHeight="250" class="cls_edit" dotted="0" curSel="3" id_text="1" id_icon="2">
+      <comboboxex show="1" pos="10,10,250,40" id="11111" dropDown="1" dropHeight="250" class="cls_edit" dotted="0" curSel="3" id_text="1" id_icon="2">
         <liststyle  class="cls_edit" colorBkgnd="#FFFFFF" itemHeight="50" >
           <template skin="_skin.sys.header">
             <text id="1" pos="5,2" colorText="#ff0000"/>
@@ -113,7 +113,7 @@
           <item text="combobox.item6" icon="6" data="100"/>
         </items>
       </comboboxex>
-      <listboxex pos="10,50,250,-10" class="cls_edit" itemHeight="50">
+      <listboxex name="lbe_test" pos="10,50,250,-10" class="cls_edit" itemHeight="50">
         <items>
           <item>
             <text pos="5,2" colorText="#ff0000">text item text item 1</text>

@@ -32,7 +32,7 @@ namespace SOUI
         *
         * Describe  构造函数  
         */
-        STabPage()
+        STabPage():m_iIcon(-1)
         {
             m_bVisible = FALSE;
             m_dwState = WndState_Invisible;
@@ -70,14 +70,31 @@ namespace SOUI
             m_strTitle = lpszTitle;
         }
         
+        int GetIconIndex() const {return m_iIcon;}
+        
+        void SetIconIndex(int iIcon) {m_iIcon=iIcon;}
+        
         SStringT GetToolTipText(){return m_strToolTipText;}
-
+        
+        /**
+         * OnUpdateToolTip
+         * @brief    处理tooltip
+         * @param    const CPoint & pt --  测试点
+         * @param [out]  SwndToolTipInfo & tipInfo -- tip信息 
+         * @return   BOOL -- FALSE
+         *
+         * Describe  总是返回FALSE，禁止在page页面上显示tooltip
+         */
+        virtual BOOL OnUpdateToolTip(CPoint pt, SwndToolTipInfo &tipInfo){return FALSE;}
+        
         SOUI_ATTRS_BEGIN()
             ATTR_I18NSTRT(L"title", m_strTitle, FALSE)
+            ATTR_INT(L"iconIndex", m_iIcon,FALSE)
         SOUI_ATTRS_END()
     protected:
 
         SStringT m_strTitle; /**< 标题 */
+        int      m_iIcon;
     };
 
     typedef enum tagSLIDEDIR
@@ -200,13 +217,14 @@ namespace SOUI
         /**
         * STabCtrl::InsertItem
         * @brief    插入tab页面
-        * @param    LPCWSTR lpContent  -- 标题
+        * @param    LPCWSTR lpContent  -- XML描述的page信息
         * @param    int iInsert  -- 位置
-        * @return   返回BOOL
+        * @return   返回插入位置
         *
         * Describe  插入tab页面
         */
-        BOOL InsertItem(LPCWSTR lpContent,int iInsert=-1);
+        int InsertItem(LPCWSTR lpContent,int iInsert=-1);
+
         /**
         * STabCtrl::InsertItem
         * @brief    插入tab页面
@@ -312,6 +330,15 @@ namespace SOUI
 
         virtual BOOL OnUpdateToolTip(CPoint pt, SwndToolTipInfo & tipInfo);
         
+        /**
+        * UpdateChildrenPosition
+        * @brief    更新子窗口位置
+        * @return   void 
+        *
+        * Describe  
+        */
+        virtual void UpdateChildrenPosition();
+
         virtual void OnInitFinished(pugi::xml_node xmlNode);
     protected:
         int HitTest(CPoint pt);

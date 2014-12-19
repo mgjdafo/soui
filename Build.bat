@@ -6,9 +6,7 @@ COLOR 1f
 ECHO.
 ECHO.
 ECHO   ##############################################################
-ECHO   #                   SOUI 工程配置向导                        #
-ECHO   #  注意:生成vs2010以上版本的工程时,所有LIB库工程的Debug配置  #
-ECHO   #       均需要手动将输出文件改成项目文件+d.lib的格式。       #
+ECHO   #               欢迎使用 SOUI 工程配置向导                   #
 ECHO   #                                启程软件 2014.10.31         #
 ECHO   ##############################################################
 ECHO.
@@ -24,6 +22,7 @@ if %selected%==1 (
 	SET target=x86
 ) else if %selected%==2 (
 	SET target=x64
+	SET cfg=!cfg! x64
 ) else (
 	goto error
 )
@@ -102,9 +101,16 @@ rem 参数配置完成
 
 tools\qmake -tp vc -r -spec .\tools\mkspecs\%specs% "CONFIG += %cfg%"
 
-SET /p selected=open soui.sln[y/n]?
-if "%selected%" == "y" (
+SET /p selected=open[o], compile[c] "soui.sln" or quit(q) [o,c or q]?
+if "%selected%" == "o" (
 	soui.sln
+) else if "%selected%" == "c" (
+	call devenv soui.sln /Clean Debug
+	call devenv soui.sln /build Debug
+	call devenv soui.sln /Clean Release
+	call devenv soui.sln /build Release
+) else (
+	goto final
 )
 
 goto final

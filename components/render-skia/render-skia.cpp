@@ -401,7 +401,7 @@ namespace SOUI
         paint.setColor(SColor(m_curPen->GetColor()).toARGB());
         SGetLineDashEffect skDash(m_curPen->GetStyle());
         paint.setPathEffect(skDash.Get());
-        paint.setStrokeWidth((SkScalar)m_curPen->GetWidth());
+        paint.setStrokeWidth((SkScalar)m_curPen->GetWidth()-0.5f);
         paint.setStyle(SkPaint::kStroke_Style);
         paint.setAntiAlias(true);
 
@@ -451,7 +451,7 @@ namespace SOUI
         paint.setColor(SColor(m_curPen->GetColor()).toARGB());
         SGetLineDashEffect skDash(m_curPen->GetStyle());
         paint.setPathEffect(skDash.Get());
-        paint.setStrokeWidth((SkScalar)m_curPen->GetWidth());
+        paint.setStrokeWidth((SkScalar)m_curPen->GetWidth()-0.5f);
         paint.setStyle(SkPaint::kStroke_Style);
         m_SkCanvas->drawPoints(SkCanvas::kPolygon_PointMode,nCount,pts,paint);
         delete []pts;
@@ -462,7 +462,7 @@ namespace SOUI
 	HRESULT SRenderTarget_Skia::TextOut( int x, int y, LPCTSTR lpszString, int nCount)
 	{
 		if(nCount<0) nCount= _tcslen(lpszString);
-		SStringW strW=S_CT2W(SStringW(lpszString,nCount));
+		SStringW strW=S_CT2W(SStringT(lpszString,nCount));
         SkPaint     txtPaint = m_curFont->GetPaint();
         SkPaint::FontMetrics metrics;
         txtPaint.getFontMetrics(&metrics);
@@ -860,7 +860,7 @@ namespace SOUI
         paint.setColor(SColor(m_curPen->GetColor()).toARGB());
         SGetLineDashEffect skDash(m_curPen->GetStyle());
         paint.setPathEffect(skDash.Get());
-        paint.setStrokeWidth((SkScalar)m_curPen->GetWidth());
+        paint.setStrokeWidth((SkScalar)m_curPen->GetWidth()-0.5f);
         paint.setStyle(SkPaint::kStroke_Style);
 
         SkRect skrc = toSkRect(pRect);
@@ -895,7 +895,7 @@ namespace SOUI
         paint.setColor(SColor(m_curPen->GetColor()).toARGB());
         SGetLineDashEffect skDash(m_curPen->GetStyle());
         paint.setPathEffect(skDash.Get());
-        paint.setStrokeWidth((SkScalar)m_curPen->GetWidth());
+        paint.setStrokeWidth((SkScalar)m_curPen->GetWidth()-0.5f);
         paint.setStyle(SkPaint::kStroke_Style);
 
         SkRect skrc = toSkRect(pRect);
