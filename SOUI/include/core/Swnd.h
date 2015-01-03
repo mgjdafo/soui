@@ -21,10 +21,11 @@
 #include "event/EventSubscriber.h"
 #include "event/events.h"
 #include "event/EventSet.h"
-#include <OCIdl.h>
 #include "SwndLayout.h"
 #include "res.mgr/SStylePool.h"
 #include "res.mgr/SSkinPool.h"
+
+#include <OCIdl.h>
 
 #define SC_WANTARROWS     0x0001      /* Control wants arrow keys         */
 #define SC_WANTTAB        0x0002      /* Control wants tab keys           */
@@ -43,6 +44,8 @@ namespace SOUI
     enum {NormalShow=0,ParentShow=1};    //提供WM_SHOWWINDOW消息识别是父窗口显示还是要显示本窗口
     enum {NormalEnable=0,ParentEnable=1};    //提供WM_ENABLE消息识别是父窗口可用还是直接操作当前窗口
 
+    
+    #define UM_UPDATESWND (WM_USER+2000)    //发送到宿主窗口的请求刷新非背景混合窗口的自定义消息, wParam:SWND
 
     class STimerID
     {
@@ -141,8 +144,9 @@ namespace SOUI
         , public TObjRefImpl2<IObjRef,SWindow>
     {
         SOUI_CLASS_NAME(SWindow, L"window")
-        friend class SwndLayout;
+        friend class SwndLayoutBuilder;
         friend class SWindowRepos;
+        friend class SHostWnd;
     public:
         SWindow();
 
@@ -361,7 +365,7 @@ namespace SOUI
             SWindow *pTarget = FindChildByID(nID,nDeep);
             if(!pTarget || !pTarget->IsClass(T::GetClassName()))
             {
-                SASSERT(pTarget);
+                SASSERT_FMTW(FALSE,L"FindChildByID2 Failed, no window of class [%s] with id of [%d] was found within [%d] levels",T::GetClassName(),nID,nDeep);
                 return NULL;
             }
             return (T*)pTarget;
@@ -398,7 +402,7 @@ namespace SOUI
             SWindow *pTarget = FindChildByName(pszName,nDeep);
             if(!pTarget || !pTarget->IsClass(T::GetClassName()))
             {
-                SASSERT(pTarget);
+                SASSERT_FMTW(FALSE,L"FindChildByName2 Failed, no window of class [%s] with name of [%s] was found within [%d] levels",T::GetClassName(),pszName,nDeep);
                 return NULL;
             }
             return (T*)pTarget;
@@ -645,7 +649,7 @@ namespace SOUI
         * @param    const CRect & rcNew --  新位置
         * @return   void 
         *
-        * Describe  
+        * Describe  窗口位置发生变化,更新窗口及计算子窗口位置
         */
         virtual void OnRelayout(const CRect &rcOld, const CRect & rcNew);
         
@@ -657,6 +661,14 @@ namespace SOUI
         * Describe  
         */
         virtual CRect GetChildrenLayoutRect();
+
+        /**
+         * GetLayout
+         * @brief    获得当前窗口的布局对象
+         * @return   const SwndPosition * -- 布局对象指针
+         * Describe  
+         */    
+        virtual const SwndLayout * GetLayout() const;
 
         /**
         * GetDesiredSize
@@ -858,6 +870,8 @@ namespace SOUI
 
     protected://helper functions
 
+        void _Update();
+        
         /**
         * GetNextVisibleWindow
         * @brief    获得指定窗口的下一个可见窗口
@@ -992,13 +1006,13 @@ namespace SOUI
             ATTR_INT(L"maxWidth",m_nMaxWidth,FALSE)
             ATTR_INT(L"clipClient",m_bClipClient,FALSE)
             ATTR_INT(L"focusable",m_bFocusable,FALSE)
-            ATTR_INT(L"sep", m_layout.nSepSpace, FALSE)
             ATTR_CHAIN(m_style)                     //支持对style中的属性定制
         SOUI_ATTRS_END()
         
     protected:
         SWND                m_swnd;             /**< 窗口句柄 */
         CRect               m_rcWindow;         /**< 窗口在容器中的位置 */
+        BOOL                m_bFloat;           /**< 窗口位置固定不动的标志 */
 
         ISwndContainer *    m_pContainer;       /**< 容器对象 */
         SEventSet           m_evtSet;           /**< 窗口事件集合 */
@@ -1034,7 +1048,7 @@ namespace SOUI
         ISkinObj *          m_pNcSkin;          /**< 非客户区skin */
         ULONG_PTR           m_uData;            /**< 窗口的数据位,可以通过GetUserData获得 */
 
-        SwndLayout          m_layout;           /**< 布局对象 */
+        SwndLayout        m_layout;           /**< 布局对象 */
         int                 m_nMaxWidth;        /**< 自动计算大小时，窗口的最大宽度 */
 
         CAutoRefPtr<IRenderTarget> m_cachedRT;  /**< 缓存窗口绘制的RT */
@@ -1043,6 +1057,7 @@ namespace SOUI
         DWORD               m_gdcFlags;
         BOOL                m_bClipRT;
 
+        CAutoRefPtr<IRegion>    m_invalidRegion;/**< 非背景混合窗口的脏区域 */
 #ifdef _DEBUG
         DWORD               m_nMainThreadId;    /**< 窗口宿线程ID */
 #endif

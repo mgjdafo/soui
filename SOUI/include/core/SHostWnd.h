@@ -130,6 +130,7 @@ public:
     BOOL AnimateHostWindow(DWORD dwTime,DWORD dwFlags);
 protected:
     void _Redraw();
+    void _UpdateNonBkgndBlendSwnd();
     
     SDummyWnd            m_dummyWnd;    //半透明窗口使用的一个响应WM_PAINT消息的窗口
     SHostWndAttr         m_hostAttr;
@@ -156,6 +157,10 @@ protected:
     
     CAutoRefPtr<SStylePool>  m_privateStylePool;
     CAutoRefPtr<SSkinPool>  m_privateSkinPool;
+
+    SList<SWND>             m_lstUpdateSwnd;    /**<等待刷新的非背景混合窗口列表*/
+    SList<RECT>             m_lstUpdatedRect;   /**<更新的脏矩形列表*/
+    BOOL                    m_bRending;         /**<正在渲染过程中*/
 protected:
     //////////////////////////////////////////////////////////////////////////
     // Message handler
@@ -252,6 +257,8 @@ protected:
     void UpdateHost(HDC dc,const CRect &rc);
     void UpdateLayerFromRenderTarget(IRenderTarget *pRT,BYTE byAlpha, LPCRECT prcDirty=NULL);
 
+    LRESULT OnUpdateSwnd(UINT uMsg,WPARAM,LPARAM);
+    
 #ifndef DISABLE_SWNDSPY
 protected:
     LRESULT OnSpyMsgSetSpy(UINT uMsg,WPARAM wParam,LPARAM lParam);
@@ -294,6 +301,7 @@ protected:
         MSG_WM_NCCALCSIZE(OnNcCalcSize)
         MSG_WM_NCHITTEST(OnWndNcHitTest)
         MSG_WM_GETMINMAXINFO(OnGetMinMaxInfo)
+        MESSAGE_HANDLER_EX(UM_UPDATESWND,OnUpdateSwnd)
     #ifndef DISABLE_SWNDSPY
         MESSAGE_HANDLER_EX(SPYMSG_SETSPY, OnSpyMsgSetSpy)
         MESSAGE_HANDLER_EX(SPYMSG_SWNDENUM, OnSpyMsgSwndEnum)
