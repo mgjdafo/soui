@@ -8,6 +8,7 @@
 #include "MemFlash.h"
 #include "../controls.extend/propgrid/SPropertyGrid.h"
 #include "../controls.extend/SFlyWnd.h"
+#include "../controls.extend/SFadeFrame.h"
 #include "uianimation/UiAnimationWnd.h"
 
 #if defined(_DEBUG) && !defined(_WIN64)
@@ -147,8 +148,13 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*
 
         theApp->RegisterWndFactory(TplSWindowFactory<SIPAddressCtrl>());//注册IP控件
         theApp->RegisterWndFactory(TplSWindowFactory<SPropertyGrid>());//注册属性表控件
-        theApp->RegisterWndFactory(TplSWindowFactory<SUiAnimationWnd>());//注册动画控件
+        
+        if(SUCCEEDED(CUiAnimation::Init()))
+        {
+            theApp->RegisterWndFactory(TplSWindowFactory<SUiAnimationWnd>());//注册动画控件
+        }
         theApp->RegisterWndFactory(TplSWindowFactory<SFlyWnd>());//注册飞行动画控件
+        theApp->RegisterWndFactory(TplSWindowFactory<SFadeFrame>());//注册渐显隐动画控件
         SSkinGif::Gdiplus_Startup();
 
         //加载系统资源
@@ -183,7 +189,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*
 
         //卸载菜单边框绘制hook
         CMenuWndHook::UnInstallHook();
-        
+        CUiAnimation::Free();
         SSkinGif::Gdiplus_Shutdown();
     }
     delete pComMgr;

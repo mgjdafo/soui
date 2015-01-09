@@ -22,7 +22,7 @@ namespace SOUI
     class SOUI_EXP SwndContainerImpl : public ISwndContainer
     {
     public:
-        SwndContainerImpl(SWindow *pHost);
+        SwndContainerImpl(SWindow *pRoot);
         
         IDropTarget * GetDropTarget(){return &m_dropTarget;}
 
@@ -52,6 +52,17 @@ namespace SOUI
 
         virtual BOOL UnregisterTimelineHandler(ITimelineHandler *pHandler);
 
+        virtual BOOL RegisterTrackMouseEvent(SWND swnd);
+
+        virtual BOOL UnregisterTrackMouseEvent(SWND swnd);
+
+        //标记窗口树的zorder失效
+        virtual void MarkWndTreeZorderDirty();
+
+        //重建窗口树的zorder
+        virtual void BuildWndTreeZorder();
+
+    public://ITimelineHandler
         virtual void OnNextFrame();
     protected:
 
@@ -72,6 +83,8 @@ namespace SOUI
         void OnActivate(UINT nState);
 
         void OnActivateApp(BOOL bActive, DWORD dwThreadID);
+
+        void _BuildWndTreeZorder(SWindow *pWnd,UINT &iOrder);
     protected:
         SWND m_hCapture;
         SWND m_hHover;
@@ -81,9 +94,11 @@ namespace SOUI
 
         SDropTargetDispatcher m_dropTarget;
 
-        SWindow    *m_pHost;
+        SWindow    *m_pRoot;
+        BOOL        m_bZorderDirty;
 
         SList<ITimelineHandler*>    m_lstTimelineHandler;
+        SList<SWND>                 m_lstTrackMouseEvtWnd;
     };
 
 }//namespace SOUI

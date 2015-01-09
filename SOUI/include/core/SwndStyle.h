@@ -37,21 +37,22 @@ public:
     SwndStyle();
 
 
-    COLORREF m_crBg;        /**<背景颜色 */
-    COLORREF m_crBorder;    /**<边框颜色 */
+    COLORREF m_crBg;                /**<背景颜色 */
+    COLORREF m_crBorder;            /**<边框颜色 */
 
-    int m_nMarginX;         /**<X方向的边框大小 */
-    int m_nMarginY;         /**<Y方向的边框大小 */
+    int m_nMarginX;                 /**<X方向的边框大小 */
+    int m_nMarginY;                 /**<Y方向的边框大小 */
 
-    SStringT m_strCursor;   /**<光标NAME */
-    SStringW m_strSkinName; /**<SKIN NAME */
-    SStringW m_strNcSkinName;/**<非客户区SKIN NAME */
+    SStringT m_strCursor;           /**<光标NAME */
+    SStringW m_strSkinName;         /**<SKIN NAME */
+    SStringW m_strNcSkinName;       /**<非客户区SKIN NAME */
 
-    BYTE    m_byAlpha;          /**<窗口透明度 */
-    BYTE    m_bySepSpace;      /**<子窗口水平间隔 */
-    DWORD    m_bDotted:1;      /**<支持省略号显示文本 */
-    DWORD    m_bMouseRelay:1;  /**<鼠标消息是否转发给父窗口 */
-    DWORD    m_bBkgndBlend:1;  /**<渲染窗口内容和背景混合标志 */
+    BYTE     m_byAlpha;             /**<窗口透明度 */
+    BYTE     m_bySepSpace;          /**<子窗口水平间隔 */
+    DWORD    m_bDotted:1;           /**<支持省略号显示文本 */
+    DWORD    m_bTrackMouseEvent:1;  /**<监视鼠标进入及移出消息 */
+    DWORD    m_bBkgndBlend:1;       /**<渲染窗口内容和背景混合标志 */
+    DWORD    m_bLayeredWindow;      /**<指示是否是一个分层窗口 */
 
     UINT GetTextAlign();
     int GetStates();
@@ -98,8 +99,9 @@ protected:
         ATTR_INT(L"margin", m_nMarginX = m_nMarginY, TRUE) // 这样比较bt，不过.....凑合用吧
         ATTR_STRINGT(L"cursor",m_strCursor,FALSE)
         ATTR_INT(L"dotted",m_bDotted,FALSE)
-        ATTR_INT(L"mouseRelay",m_bMouseRelay,FALSE)
+        ATTR_INT(L"trackMouseEvent",m_bTrackMouseEvent,FALSE)
         ATTR_INT(L"alpha",m_byAlpha,TRUE)
+        ATTR_INT(L"layeredWindow",m_bLayeredWindow,TRUE)
         ATTR_INT(L"bkgndBlend",m_bBkgndBlend,TRUE)
         ATTR_INT(L"sepSpace",m_bySepSpace,TRUE)
     SOUI_ATTRS_BREAK()      //属性不交给SObject处理

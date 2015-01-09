@@ -26,7 +26,11 @@ SItemPanel::SItemPanel(SWindow *pFrameHost,pugi::xml_node xmlNode,IItemContainer
     SASSERT(m_pFrmHost);
     SASSERT(m_pItemContainer);
     SetContainer(this);
-    if(xmlNode) InitFromXml(xmlNode);
+    if(xmlNode) 
+    {
+        InitFromXml(xmlNode);
+        BuildWndTreeZorder();
+    }
 }
 
 void SItemPanel::OnFinalRelease()
@@ -80,7 +84,7 @@ IRenderTarget * SItemPanel::OnGetRenderTarget(const CRect & rc,DWORD gdcFlags)
     CRect rcInvalid=rc;
     rcInvalid.OffsetRect(rcItem.TopLeft());
     IRenderTarget *pRT=m_pFrmHost->GetRenderTarget(rcInvalid,gdcFlags);
-    if(gdcFlags & OLEDC_PAINTBKGND)
+    if(gdcFlags == OLEDC_PAINTBKGND)
     {//调用frmhost的GetRenderTarget时，不会绘制frmHost的背景。注意此外只画背景，不画前景,因为itempanel就是前景
         m_pFrmHost->SSendMessage(WM_ERASEBKGND, (WPARAM)pRT);
     }
@@ -190,6 +194,7 @@ void SItemPanel::Draw(IRenderTarget *pRT,const CRect & rc)
     pRT->OffsetViewportOrg(rc.left,rc.top);
     CAutoRefPtr<IRegion> rgn;
     GETRENDERFACTORY->CreateRegion(&rgn);
+    BuildWndTreeZorder();
     RedrawRegion(pRT,rgn);
     pRT->OffsetViewportOrg(-rc.left,-rc.top);
 }

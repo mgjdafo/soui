@@ -6,7 +6,7 @@
 #include "GradientFillHelper.h"
 #include <gdialpha.h>
 #include <math.h>
-
+#include <trace.h>
 namespace SOUI
 {
 
@@ -164,10 +164,30 @@ namespace SOUI
         m_hRgn = ::CreateRectRgn(0,0,0,0);
     }
 
+    /*
+    int CombineRgn(  HRGN hrgnDest,      // handle to destination region
+    HRGN hrgnSrc1,      // handle to source region
+    HRGN hrgnSrc2,      // handle to source region
+    int fnCombineMode   // region combining mode);
+    
+    RGN_AND Creates the intersection of the two combined regions. 
+    RGN_COPY Creates a copy of the region identified by hrgnSrc1. 
+    RGN_DIFF Combines the parts of hrgnSrc1 that are not part of hrgnSrc2. 
+    RGN_OR Creates the union of two combined regions. 
+    RGN_XOR Creates the union of two combined regions except for any overlapping areas. 
+    
+    注意 RGN_DIFF 和 RGN_COPY对于hrgnSrc1的使用差异
+    */
     void SRegion_GDI::CombineRect( LPCRECT lprect,int nCombineMode )
     {
         HRGN hRgn=::CreateRectRgnIndirect(lprect);
-        ::CombineRgn(m_hRgn,m_hRgn,hRgn,nCombineMode);
+        if(nCombineMode == RGN_DIFF)
+        {
+            ::CombineRgn(m_hRgn,m_hRgn,hRgn,RGN_DIFF);
+        }else
+        {
+            ::CombineRgn(m_hRgn,hRgn,m_hRgn,nCombineMode);
+        }
         DeleteObject(hRgn);
     }
 
@@ -312,26 +332,21 @@ namespace SOUI
         ::ReleaseDC(NULL,hdc);
         ::SetBkMode(m_hdc,TRANSPARENT);
         
-        CAutoRefPtr<IPen> pPen;
-        CreatePen(PS_SOLID,SColor(0,0,0).toCOLORREF(),1,&pPen);
-        SelectObject(pPen);
+        CreatePen(PS_SOLID,SColor(0,0,0).toCOLORREF(),1,&m_defPen);
+        SelectObject(m_defPen);
 
-        CAutoRefPtr<IBrush> pBr;
-        CreateSolidColorBrush(SColor(0,0,0).toCOLORREF(),&pBr);
-        SelectObject(pBr);
+        CreateSolidColorBrush(SColor(0,0,0).toCOLORREF(),&m_defBrush);
+        SelectObject(m_defBrush);
 
-        CAutoRefPtr<IFont> pFont;
         LOGFONT lf={0};
         lf.lfHeight=20;
         _tcscpy(lf.lfFaceName,_T("宋体"));
-        pRenderFactory->CreateFont(&pFont,lf);
-        SelectObject(pFont);
+        pRenderFactory->CreateFont(&m_defFont,lf);
+        SelectObject(m_defFont);
 
-        CAutoRefPtr<IBitmap> pBmp;
-        GetRenderFactory_GDI()->CreateBitmap(&pBmp);
-        pBmp->Init(nWid,nHei);
-        SelectObject(pBmp);
-
+        GetRenderFactory_GDI()->CreateBitmap(&m_defBmp);
+        m_defBmp->Init(nWid,nHei);
+        SelectObject(m_defBmp);
     }
 
     SRenderTarget_GDI::~SRenderTarget_GDI()
@@ -433,6 +448,8 @@ namespace SOUI
     {
         SRegion_GDI *pRgn=new SRegion_GDI(GetRenderFactory_GDI());
         ::GetClipRgn(m_hdc,pRgn->GetRegion());
+        POINT pt={-m_ptOrg.x,-m_ptOrg.y};
+        pRgn->Offset(pt);
         *ppRegion = pRgn;
         return S_OK;
     }
@@ -476,6 +493,7 @@ namespace SOUI
 
     HRESULT SRenderTarget_GDI::MeasureText( LPCTSTR pszText,int cchLen, SIZE *psz )
     {
+        if(cchLen<0) cchLen = _tcslen(pszText);
         ::GetTextExtentPoint32(m_hdc,pszText,cchLen,psz);
         return S_OK;
     }
@@ -549,6 +567,7 @@ namespace SOUI
 
     HRESULT SRenderTarget_GDI::TextOut( int x, int y, LPCTSTR lpszString, int nCount)
     {
+        if(nCount<0) nCount = _tcslen(lpszString);
         SIZE sz;
         MeasureText(lpszString,nCount,&sz);
         RECT rc={x,y,x+sz.cx,y+sz.cy};
@@ -718,6 +737,22 @@ namespace SOUI
             break;
         }
         return pRet;
+    }
+
+    HRESULT SRenderTarget_GDI::SelectDefaultObject(OBJTYPE objType, IRenderObj ** ppOldObj)
+    {
+        IRenderObj *pDefObj = NULL;
+        switch(objType)
+        {
+        case OT_BITMAP: pDefObj = m_defBmp;break;
+        case OT_PEN: pDefObj = m_defPen;break;
+        case OT_BRUSH: pDefObj = m_defBrush;break;
+        case OT_FONT: pDefObj = m_defFont;break;
+        default:return E_INVALIDARG;
+        }
+        if(pDefObj == GetCurrentObject(objType)) 
+            return S_FALSE;
+        return SelectObject(pDefObj,ppOldObj);
     }
 
     HRESULT SRenderTarget_GDI::SelectObject( IRenderObj *pObj,IRenderObj ** ppOldObj /*= NULL*/ )

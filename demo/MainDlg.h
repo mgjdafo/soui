@@ -13,6 +13,8 @@
 
 #pragma once
 
+#include "../controls.extend/SAnimator.h"
+
 /**
 * @class      CMainDlg
 * @brief      主窗口实现
@@ -73,6 +75,9 @@ protected:
     
 	int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	void OnShowWindow(BOOL bShow, UINT nStatus);
+    
+    //演示如何在应用层使用定时器
+    void OnTimer(UINT_PTR idEvent);
 
     //DUI菜单响应函数
     void OnCommand(UINT uNotifyCode, int nID, HWND wndCtl);
@@ -106,7 +111,6 @@ protected:
     //演示如何响应如listboxex,treeboxex中的item中包含控件的事件。
     void OnListBoxExEvent(EventArgs *pEvt);
     void OnTreeBoxEvent(EventArgs *pEvt);
-    
     //UI控件的事件及响应函数映射表
 	EVENT_MAP_BEGIN()
 		EVENT_ID_COMMAND(1, OnClose)

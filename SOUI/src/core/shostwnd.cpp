@@ -184,6 +184,8 @@ BOOL SHostWnd::InitFromXml(pugi::xml_node xmlNode )
 
 
     SWindow::InitFromXml(xmlNode.child(L"root"));
+    BuildWndTreeZorder();
+
     SWindow::SSendMessage(WM_SHOWWINDOW,TRUE,0);//保证子窗口处理一次showwindow事件
 
     CSimpleWnd::GetClientRect(&rcClient);
@@ -224,10 +226,8 @@ void SHostWnd::OnPrint(HDC dc, UINT uFlags)
         m_bNeedRepaint = FALSE;
 
         SThreadActiveWndMgr::EnterPaintLock();
-        CAutoRefPtr<IFont> defFont,oldFont;
-        defFont = SFontPool::getSingleton().GetFont(FF_DEFAULTFONT);
-        m_memRT->SelectObject(defFont,(IRenderObj**)&oldFont);
-        m_memRT->SetTextColor(RGBA(0,0,0,0xFF));
+        SPainter painter;
+        BeforePaint(m_memRT,painter);
 
         //m_rgnInvalidate有可能在RedrawRegion时被修改，必须生成一个临时的区域对象
         CAutoRefPtr<IRegion> pRgnUpdate=m_rgnInvalidate;
@@ -247,16 +247,22 @@ void SHostWnd::OnPrint(HDC dc, UINT uFlags)
         m_memRT->ClearRect(rcInvalid,0);
 
         if(m_bCaretActive) DrawCaret(m_ptCaret);//clear old caret 
+        BuildWndTreeZorder();
         RedrawRegion(m_memRT, pRgnUpdate);
         if(m_bCaretActive) DrawCaret(m_ptCaret);//redraw caret 
         
         m_memRT->PopClip();
         
-        m_memRT->SelectObject(oldFont);
+        AfterPaint(m_memRT,painter);
 
         SThreadActiveWndMgr::LeavePaintLock();
         
+    }else
+    {//缓存已经更新好了，只需要重新更新到窗口
+        m_rgnInvalidate->GetRgnBox(&rcInvalid);
+        m_rgnInvalidate->Clear();
     }
+    
     if(uFlags != KConstDummyPaint) //由系统发的WM_PAINT或者WM_PRINT产生的重绘请求
     {
         rcInvalid = m_rcWindow;
@@ -424,11 +430,14 @@ void SHostWnd::DrawCaret(CPoint pt)
     
     if(!m_hostAttr.m_bTranslucent)
     {
-        CSimpleWnd::InvalidateRect(rcCaret, FALSE);
+        CSimpleWnd::InvalidateRect(rcShowCaret, FALSE);
+    }else if(m_dummyWnd.IsWindow()) 
+    {
+        m_rgnInvalidate->CombineRect(&rcShowCaret,RGN_OR);
+        m_dummyWnd.Invalidate(FALSE);
     }else
     {
-        if(m_dummyWnd.IsWindow()) 
-            m_dummyWnd.Invalidate(FALSE);
+        SASSERT(FALSE);
     }
 }
 
@@ -519,10 +528,7 @@ IRenderTarget * SHostWnd::OnGetRenderTarget(const CRect & rc,DWORD gdcFlags)
     GETRENDERFACTORY->CreateRenderTarget(&pRT,rc.Width(),rc.Height());
     pRT->OffsetViewportOrg(-rc.left,-rc.top);
     
-    pRT->SelectObject(SFontPool::getSingleton().GetFont(FF_DEFAULTFONT));
-    pRT->SetTextColor(RGBA(0,0,0,0xFF));
-
-    if(!(gdcFlags & OLEDC_NODRAW))
+    if(gdcFlags != OLEDC_NODRAW)
     {
         if(m_bCaretActive)
         {
@@ -535,7 +541,7 @@ IRenderTarget * SHostWnd::OnGetRenderTarget(const CRect & rc,DWORD gdcFlags)
 
 void SHostWnd::OnReleaseRenderTarget(IRenderTarget * pRT,const CRect &rc,DWORD gdcFlags)
 {
-    if(!(gdcFlags & OLEDC_NODRAW))
+    if(gdcFlags != OLEDC_NODRAW)
     {
         m_memRT->BitBlt(&rc,pRT,rc.left,rc.top,SRCCOPY);
         if(m_bCaretActive)
@@ -1146,6 +1152,18 @@ void SHostWnd::_UpdateNonBkgndBlendSwnd()
             pWnd->_Update();
         }
     }
+}
+
+
+void SHostWnd::BeforePaint(IRenderTarget *pRT, SPainter &painter)
+{
+    pRT->SelectObject(SFontPool::getSingleton().GetFont(FF_DEFAULTFONT));
+    pRT->SetTextColor(RGBA(0,0,0,255));
+}
+
+void SHostWnd::AfterPaint(IRenderTarget *pRT, SPainter &painter)
+{
+    pRT->SelectDefaultObject(OT_FONT);
 }
 
 #endif//DISABLE_SWNDSPY

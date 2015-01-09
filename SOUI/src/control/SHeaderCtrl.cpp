@@ -158,10 +158,7 @@ namespace SOUI
     {
         CRect rcItem=GetItemRect(iItem);
         IRenderTarget *pRT=GetRenderTarget(rcItem,OLEDC_PAINTBKGND);
-        SPainter painter;
-        BeforePaint(pRT,painter);
         DrawItem(pRT,rcItem,m_arrItems.GetData()+iItem);
-        AfterPaint(pRT,painter);
         ReleaseRenderTarget(pRT);
     }
 
@@ -263,7 +260,6 @@ namespace SOUI
                     if(IsItemHover(dwDragTo) && m_dwDragTo!=dwDragTo)
                     {
                         m_dwDragTo=dwDragTo;
-                        STRACE(_T("\n!!! dragto %d"),LOWORD(dwDragTo));
                         DrawDraggingState(dwDragTo);
                     }
                     CDragWnd::DragMove(pt2);

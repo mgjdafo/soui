@@ -147,6 +147,7 @@ namespace SOUI
         friend class SwndLayoutBuilder;
         friend class SWindowRepos;
         friend class SHostWnd;
+        friend class SwndContainerImpl;
     public:
         SWindow();
 
@@ -288,7 +289,9 @@ namespace SOUI
          *
          * Describe  
          */
-        SWindow *GetTopLevelParent();
+        SWindow * GetTopLevelParent();
+        
+        SWindow * GetRoot(){return GetTopLevelParent();}
         
         /**
          * GetChildrenCount
@@ -744,6 +747,7 @@ namespace SOUI
         * Describe  
         */
         virtual void AfterPaint(IRenderTarget *pRT, SPainter &painter);
+        
     public://render相关方法
         /**
         * RedrawRegion
@@ -857,7 +861,7 @@ namespace SOUI
         * @return   bool -- true绘制到cache上。
         * Describe  
         */    
-        bool IsDrawToCache() const {return m_bCacheDraw || m_style.m_byAlpha!=0xFF;}
+        bool IsDrawToCache() const;
 
         /**
         * GetCachedRenderTarget
@@ -865,32 +869,57 @@ namespace SOUI
         * @return   IRenderTarget * -- Cache窗口内容的RenderTarget
         * Describe  
         */    
-        IRenderTarget * GetCachedRenderTarget(){return m_cachedRT;}
+        IRenderTarget * GetCachedRenderTarget();
 
+        /**
+         * IsLayeredWindow
+         * @brief    确定渲染时子窗口的内容是不是渲染到当前窗口的缓存上
+         * @return   BOOL -- TREU:子窗口的内容先渲染到this的缓存RT上
+         * Describe  
+         */    
+        BOOL IsLayeredWindow();
 
     protected://helper functions
 
         void _Update();
         
+    
         /**
-        * GetNextVisibleWindow
-        * @brief    获得指定窗口的下一个可见窗口
-        * @param    SWindow * pWnd --  参考窗口
-        * @param    const CRect & rcDraw --  目标矩形
-        * @return   SWindow * 下一个可见窗口
+         * _GetCurrentRenderContainer
+         * @brief    获得当前窗口所属的渲染层宿主窗口
+         * @return   SWindow * -- 渲染层宿主窗口
+         * Describe  
+         */    
+        SWindow * _GetCurrentLayeredWindow();
+
+        /**
+        * _GetRenderTarget
+        * @brief    获取一个与SWND窗口相适应的内存DC
+        * @param  [in,out]  CRect & rcGetRT --  RT范围,保存最后的有效绘制区
+        * @param    DWORD gdcFlags --  同OLEDCFLAGS
+        * @param    BOOL bClientDC --  限制在client区域
+        * @return   IRenderTarget * 
+        *
+        * Describe  使用ReleaseRenderTarget释放
+        */
+        IRenderTarget * _GetRenderTarget(CRect & rcGetRT,DWORD gdcFlags,UINT uMinFrgndZorder,IRegion *pRgn);
+
+
+        /**
+        * _ReleaseRenderTarget
+        * @brief    
+        * @param    IRenderTarget * pRT --  释放由GetRenderTarget获取的RT
+        * @return   void 
         *
         * Describe  
         */
-        static SWindow *GetNextVisibleWindow(SWindow *pWnd,const CRect &rcDraw);
+        void _ReleaseRenderTarget(IRenderTarget *pRT);
 
-        enum PRSTATE{
-            PRS_LOOKSTART=0,    //查找开始窗口
-            PRS_DRAWING,        //窗口渲染中
-            PRS_MEETEND         //碰到指定的结束窗口
-        };
-
-        static  BOOL _PaintRegion( IRenderTarget *pRT, IRegion *pRgn,SWindow *pWndCur,SWindow *pStart,SWindow *pEnd,PRSTATE & prState );
-        static void _BeforePaintEx(SWindow *pWnd,IRenderTarget *pRT);
+        //将窗口内容绘制到RenderTarget上
+        void _PaintWindowClient(IRenderTarget *pRT);
+        void _PaintWindowNonClient(IRenderTarget *pRT);
+        void _PaintRegion(IRenderTarget *pRT, IRegion *pRgn,UINT iZorderBegin,UINT iZorderEnd);
+        void _PaintRegion2(IRenderTarget *pRT, IRegion *pRgn,UINT iZorderBegin,UINT iZorderEnd);
 
         void DrawDefFocusRect(IRenderTarget *pRT,CRect rc);
         void DrawAniStep(CRect rcFore,CRect rcBack,IRenderTarget *pRTFore,IRenderTarget * pRTBack,CPoint ptAnchor);
@@ -983,7 +1012,7 @@ namespace SOUI
         HRESULT OnAttrAlpha(const SStringW& strValue, BOOL bLoading);
         HRESULT OnAttrSkin(const SStringW& strValue, BOOL bLoading);
         HRESULT OnAttrClass(const SStringW& strValue, BOOL bLoading);
-
+        HRESULT OnAttrTrackMouseEvent(const SStringW& strValue, BOOL bLoading);
 
         SOUI_ATTRS_BEGIN()
             ATTR_INT(L"id",m_nID,FALSE)
@@ -1001,6 +1030,7 @@ namespace SOUI
             ATTR_CUSTOM(L"pos2type", OnAttrPos2type)
             ATTR_CUSTOM(L"cache", OnAttrCache)
             ATTR_CUSTOM(L"alpha",OnAttrAlpha)
+            ATTR_CUSTOM(L"trackMouseEvent",OnAttrTrackMouseEvent)
             ATTR_I18NSTRT(L"tip", m_strToolTipText, FALSE)  //使用语言包翻译
             ATTR_INT(L"msgTransparent", m_bMsgTransparent, FALSE)
             ATTR_INT(L"maxWidth",m_nMaxWidth,FALSE)
@@ -1032,6 +1062,7 @@ namespace SOUI
         SStringT            m_strToolTipText;   /**< 窗口ToolTip */
         SStringW            m_strName;          /**< 窗口名称 */
         int                 m_nID;              /**< 窗口ID */
+        UINT                m_uZorder;          /**< 窗口Zorder */
 
         DWORD               m_dwState;          /**< 窗口在渲染过程中的状态 */
         DWORD               m_bVisible:1;       /**< 窗口可见状态 */
@@ -1048,15 +1079,21 @@ namespace SOUI
         ISkinObj *          m_pNcSkin;          /**< 非客户区skin */
         ULONG_PTR           m_uData;            /**< 窗口的数据位,可以通过GetUserData获得 */
 
-        SwndLayout        m_layout;           /**< 布局对象 */
+        SwndLayout        m_layout;             /**< 布局对象 */
         int                 m_nMaxWidth;        /**< 自动计算大小时，窗口的最大宽度 */
 
         CAutoRefPtr<IRenderTarget> m_cachedRT;  /**< 缓存窗口绘制的RT */
         
-        CRect               m_rcGetRT;
-        DWORD               m_gdcFlags;
-        BOOL                m_bClipRT;
-
+        typedef struct GETRTDATA
+        {
+            CRect rcRT;             /**< GETRT调用的有效范围 */
+            DWORD gdcFlags;         /**< GETRT绘制标志位 */
+            UINT  uMinFrgndZorder;  /**< GETRT时前景开始的zorder */
+            CAutoRefPtr<IRegion> rgn;/**< 保存一个和rcRT对应的IRegion对象 */
+        } * PGETRTDATA;
+        
+        PGETRTDATA m_pGetRTData;
+        
         CAutoRefPtr<IRegion>    m_invalidRegion;/**< 非背景混合窗口的脏区域 */
 #ifdef _DEBUG
         DWORD               m_nMainThreadId;    /**< 窗口宿线程ID */
