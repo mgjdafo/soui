@@ -18,6 +18,7 @@ SPanel::SPanel()
     ,m_wBarVisible(0)
     ,m_wBarEnable(SSB_BOTH)
     ,m_dwUpdateInterval(DEF_UPDATEINTERVAL)
+    ,m_nScrollSpeed(10)
 {
     ISkinObj *pSkin=GETBUILTINSKIN(SKIN_SYS_SCROLLBAR);
     if(pSkin && pSkin->IsClass(SSkinScrollbar::GetClassName()))
@@ -284,7 +285,7 @@ void SPanel::OnNcPaint(IRenderTarget *pRT)
         rcDest=GetSbPartRect(TRUE,SB_LINEUP);
         m_pSkinSb->Draw(pRT,rcDest,MAKESBSTATE(SB_LINEUP,nState,TRUE));
         rcDest=GetSbRailwayRect(TRUE);
-        m_pSkinSb->Draw(pRT,rcDest,MAKESBSTATE(SB_PAGEUP,nState,TRUE));
+        m_pSkinSb->Draw(pRT,rcDest,MAKESBSTATE(SB_PAGEUP,m_bDragSb?SBST_HOVER:nState,TRUE));
         rcDest=GetSbPartRect(TRUE,SB_THUMBTRACK);
         m_pSkinSb->Draw(pRT,rcDest,MAKESBSTATE(SB_THUMBTRACK,m_bDragSb?SBST_PUSHDOWN:nState,TRUE));
         rcDest=GetSbPartRect(TRUE,SB_LINEDOWN);
@@ -296,7 +297,7 @@ void SPanel::OnNcPaint(IRenderTarget *pRT)
         rcDest=GetSbPartRect(FALSE,SB_LINEUP);
         m_pSkinSb->Draw(pRT,rcDest,MAKESBSTATE(SB_LINEUP,nState,FALSE));
         rcDest=GetSbRailwayRect(FALSE);
-        m_pSkinSb->Draw(pRT,rcDest,MAKESBSTATE(SB_PAGEUP,nState,FALSE));
+        m_pSkinSb->Draw(pRT,rcDest,MAKESBSTATE(SB_PAGEUP,m_bDragSb?SBST_HOVER:nState,FALSE));
         rcDest=GetSbPartRect(FALSE,SB_THUMBTRACK);
         m_pSkinSb->Draw(pRT,rcDest,MAKESBSTATE(SB_THUMBTRACK,m_bDragSb?SBST_PUSHDOWN:nState,FALSE));
         rcDest=GetSbPartRect(FALSE,SB_LINEDOWN);
@@ -354,6 +355,8 @@ void SPanel::OnNcLButtonDown(UINT nFlags, CPoint point)
 
             CRect rcSlide=GetSbPartRect(m_HitInfo.bVertical,SB_THUMBTRACK);
             CAutoRefPtr<IRenderTarget> pRT=GetRenderTarget(&rcSlide,OLEDC_PAINTBKGND,FALSE);
+            CRect rcRail = GetSbRailwayRect(m_HitInfo.bVertical);
+            m_pSkinSb->Draw(pRT,rcRail,MAKESBSTATE(SB_PAGEUP,SBST_HOVER,m_HitInfo.bVertical));
             m_pSkinSb->Draw(pRT,rcSlide,MAKESBSTATE(SB_THUMBTRACK,SBST_PUSHDOWN,m_HitInfo.bVertical));
             ReleaseRenderTarget(pRT);
         }
@@ -443,7 +446,7 @@ void SPanel::OnNcMouseMove(UINT nFlags, CPoint point)
         }
 
         CAutoRefPtr<IRenderTarget> pRT=GetRenderTarget(&rcRail,OLEDC_PAINTBKGND,FALSE);
-        m_pSkinSb->Draw(pRT,rcRail,MAKESBSTATE(SB_PAGEUP,SBST_NORMAL,m_HitInfo.bVertical));
+        m_pSkinSb->Draw(pRT,rcRail,MAKESBSTATE(SB_PAGEUP,SBST_HOVER,m_HitInfo.bVertical));
         m_pSkinSb->Draw(pRT,rcSlide,MAKESBSTATE(SB_THUMBTRACK,SBST_PUSHDOWN,m_HitInfo.bVertical));
         ReleaseRenderTarget(pRT);
 
@@ -476,7 +479,7 @@ void SPanel::OnNcMouseMove(UINT nFlags, CPoint point)
                         m_pSkinSb->Draw(pRT,rc,MAKESBSTATE(SB_LINEUP,SBST_NORMAL,uHit.bVertical));
                     }
                     rc=GetSbRailwayRect(uHit.bVertical);
-                    m_pSkinSb->Draw(pRT,rc,MAKESBSTATE(SB_PAGEUP,SBST_NORMAL,uHit.bVertical));
+                    m_pSkinSb->Draw(pRT,rc,MAKESBSTATE(SB_PAGEUP,SBST_HOVER,uHit.bVertical));
                     if(uHit.uSbCode!=SB_LINEDOWN)
                     {
                         rc=GetSbPartRect(uHit.bVertical,SB_LINEDOWN);
@@ -508,7 +511,7 @@ void SPanel::OnNcMouseMove(UINT nFlags, CPoint point)
                     {//需要先画轨道，再画拖动条,以处理拖动条可能出现的半透明
                         CRect rc=GetSbRailwayRect(uHitOrig.bVertical);
                         CAutoRefPtr<IRenderTarget> pRT=GetRenderTarget(&rc,OLEDC_PAINTBKGND,FALSE);
-                        m_pSkinSb->Draw(pRT,rc,MAKESBSTATE(SB_PAGEUP,SBST_NORMAL,uHitOrig.bVertical));
+                        m_pSkinSb->Draw(pRT,rc,MAKESBSTATE(SB_PAGEUP,SBST_HOVER,uHitOrig.bVertical));
                         rc=GetSbPartRect(uHitOrig.bVertical,SB_THUMBTRACK);
                         m_pSkinSb->Draw(pRT,rc,MAKESBSTATE(SB_THUMBTRACK,SBST_NORMAL,uHitOrig.bVertical));
                         ReleaseRenderTarget(pRT);
@@ -616,6 +619,12 @@ BOOL SPanel::OnScroll(BOOL bVertical,UINT uCode,int nPos)
     case SB_THUMBPOSITION:
         nNewPos=nPos;
         break;
+    case SB_TOP:
+        nNewPos = psi->nMin;
+        break;
+    case SB_BOTTOM:
+        nNewPos = psi->nMax-psi->nPage+1;
+        break;
     }
 
     if(nNewPos<psi->nMin) nNewPos=psi->nMin;
@@ -711,24 +720,27 @@ HRESULT SPanel::OnAttrScrollbarSkin( SStringW strValue,BOOL bLoading )
     return bLoading?S_FALSE:S_OK;
 }
 
+int SPanel::GetScrollLineSize( BOOL bVertical )
+{
+    return m_nScrollSpeed;
+}
+
+void SPanel::OnVScroll(UINT nSBCode, UINT nPos, HWND)
+{
+    OnScroll(TRUE,nSBCode,nPos);
+}
+
+void SPanel::OnHScroll(UINT nSBCode, UINT nPos, HWND)
+{
+    OnScroll(FALSE,nSBCode,nPos);
+}
 
 //////////////////////////////////////////////////////////////////////////
 SScrollView::SScrollView()
-:m_szView(-1,-1)
-,m_ptOrigin(0,0)
 {
     m_bClipClient=TRUE;
 }
 
-int SScrollView::OnCreate( LPVOID )
-{
-    int nRet=__super::OnCreate(NULL);
-    if(nRet!=0) return nRet;
-    if(m_szView.cx==-1) m_szView.cx=m_rcClient.Width();
-    if(m_szView.cy==-1) m_szView.cy=m_rcClient.Height();
-    SetViewOrigin(m_ptOrigin);
-    return 0;
-}
 
 void SScrollView::OnSize(UINT nType,CSize size)
 {
@@ -759,6 +771,10 @@ void SScrollView::SetViewSize(CSize szView)
     CSize oldViewSize=m_szView;
     m_szView=szView;
     UpdateScrollBar();
+    CRect rcClient;
+    GetClientRect(&rcClient);
+    SSendMessage(WM_SIZE,0,MAKELPARAM(rcClient.Width(),rcClient.Height()));
+    
     OnViewSizeChanged(oldViewSize,szView);
 }
 

@@ -6,7 +6,17 @@
 #include "MainDlg.h"
 #include "helper/SMenu.h"
 #include "../controls.extend/FileHelper.h"
-#include "skinole\ImageOle.h"
+#include "../controls.extend/SChatEdit.h"
+#include "../controls.extend/reole/richeditole.h"
+#include "FormatMsgDlg.h"
+
+#pragma warning(disable:4192)
+
+#ifdef _DEBUG
+#import "..\bin\SoSmileyd.dll" named_guids
+#else
+#import "..\bin\SoSmiley.dll" named_guids
+#endif
 
 #include <dwmapi.h>
 #pragma comment(lib,"dwmapi.lib")
@@ -245,6 +255,25 @@ void CMainDlg::OnDestory()
 }
 
 
+class CSmileySource2 : public CSmileySource
+{
+public:
+    CSmileySource2(){}
+
+protected:
+    //获对ID对应的图片路径
+    virtual SStringW ImageID2Path(UINT nID)
+    {
+        return SStringW().Format(L"./gif/%d.gif",nID);
+    }
+};
+
+//Richedit中插入表情使用的回调函数。
+ISmileySource * CreateSource2()
+{
+    return  new CSmileySource2;
+}
+
 LRESULT CMainDlg::OnInitDialog( HWND hWnd, LPARAM lParam )
 {
     m_bLayoutInited=TRUE;
@@ -268,7 +297,7 @@ LRESULT CMainDlg::OnInitDialog( HWND hWnd, LPARAM lParam )
     SRichEdit *pEdit = FindChildByName2<SRichEdit>(L"re_gifhost");
     if(pEdit)
     {
-        RichEdit_SetOleCallback(pEdit);
+        CRichEditOleCallback::SetRicheditOleCallback(pEdit,CreateSource2);
         pEdit->SetAttribute(L"rtf",L"rtf:rtf_test");
     }
 
@@ -361,10 +390,67 @@ void CMainDlg::OnBtnInsertGif2RE()
     SRichEdit *pEdit = FindChildByName2<SRichEdit>(L"re_gifhost");
     if(pEdit)
     {
-        ISkinObj * pSkin = GETSKIN(L"gif_penguin");
-        if(pSkin)
+        CFileDialogEx openDlg(TRUE,_T("gif"),0,6,_T("gif files(*.gif)\0*.gif\0All files (*.*)\0*.*\0\0"));
+        if(openDlg.DoModal()==IDOK)
         {
-            RichEdit_InsertSkin(pEdit,pSkin);
+            ISmileySource* pSource = new CSmileySource2;
+            HRESULT hr=pSource->LoadFromFile(S_CT2W(openDlg.m_szFileName));
+            if(SUCCEEDED(hr))
+            {
+                SComPtr<ISoSmileyCtrl> pSmiley;
+                hr=::CoCreateInstance(SoSmiley::CLSID_CSoSmileyCtrl,NULL,CLSCTX_INPROC,__uuidof(SoSmiley::ISoSmileyCtrl),(LPVOID*)&pSmiley); 
+                if(SUCCEEDED(hr))
+                {
+                    pSmiley->SetSource(pSource);
+                    SComPtr<IRichEditOle> ole;
+                    pEdit->SSendMessage(EM_GETOLEINTERFACE,0,(LPARAM)&ole);
+                    pSmiley->Insert2Richedit((DWORD_PTR)(void*)ole);
+                }else
+                {
+                    UINT uRet = SMessageBox(m_hWnd,_T("可能是因为没有向系统注册表情COM模块。\\n现在注册吗?"),_T("创建表情OLE对象失败"),MB_YESNO|MB_ICONSTOP);
+                    if(uRet == IDYES)
+                    {
+                        HMODULE hMod = LoadLibrary(_T("sosmiley.dll"));
+                        if(hMod)
+                        {
+                            typedef HRESULT (STDAPICALLTYPE *DllRegisterServerPtr)();
+                            DllRegisterServerPtr funRegDll = (DllRegisterServerPtr)GetProcAddress(hMod,"DllRegisterServer");
+                            if(funRegDll)
+                            {
+                                HRESULT hr=funRegDll();
+                                if(FAILED(hr))
+                                {
+                                    SMessageBox(m_hWnd,_T("请使用管理员权限运行模块注册程序"),_T("注册表情COM失败"),MB_OK|MB_ICONSTOP);
+                                }else
+                                {
+                                    SMessageBox(m_hWnd,_T("请重试"),_T("注册成功"),MB_OK|MB_ICONINFORMATION);
+                                }
+                            }
+                            FreeLibrary(hMod);
+                        }else
+                        {
+                            SMessageBox(m_hWnd,_T("没有找到表情COM模块[sosmiley.dll]。\\n现在注册吗"),_T("错误"),MB_OK|MB_ICONSTOP);
+                        }
+                    }
+                }
+            }else
+            {
+                SMessageBox(m_hWnd,_T("加载表情失败"),_T("错误"),MB_OK|MB_ICONSTOP);
+            }
+            pSource->Release();
+        }
+    }
+}
+
+void CMainDlg::OnBtnAppendMsg()
+{
+    SChatEdit *pEdit = FindChildByName2<SChatEdit>(L"re_gifhost");
+    if(pEdit)
+    {
+        CFormatMsgDlg formatMsgDlg;
+        if(formatMsgDlg.DoModal()==IDOK)
+        {
+            pEdit->AppendFormatText(formatMsgDlg.m_strMsg);
         }
     }
 }
@@ -457,4 +543,58 @@ void CMainDlg::OnTabPageRadioSwitch(int nID)
         STabCtrl *pTab =FindChildByName2<STabCtrl>(L"tab_radio2");
         if(pTab) pTab->SetCurSel(nID-10000);
     }
+}
+
+void CMainDlg::OnBtnRtfSave()
+{
+    SRichEdit *pEdit = FindChildByName2<SRichEdit>(L"re_gifhost");
+    if(pEdit)
+    {
+        CFileDialogEx openDlg(FALSE,_T("rtf"),_T("soui_richedit"),6,_T("rtf files(*.rtf)\0*.rtf\0All files (*.*)\0*.*\0\0"));
+        if(openDlg.DoModal()==IDOK)
+        {
+            pEdit->SaveRtf(openDlg.m_szFileName);
+        }
+    }
+}
+
+void CMainDlg::OnBtnRtfOpen()
+{
+    SRichEdit *pEdit = FindChildByName2<SRichEdit>(L"re_gifhost");
+    if(pEdit)
+    {
+        CFileDialogEx openDlg(TRUE,_T("rtf"),0,6,_T("rtf files(*.rtf)\0*.rtf\0All files (*.*)\0*.*\0\0"));
+        if(openDlg.DoModal()==IDOK)
+        {
+            pEdit->LoadRtf(openDlg.m_szFileName);
+        }
+    }
+}
+
+void CMainDlg::OnTreeBoxQueryItemHeight( EventArgs * pEvt )
+{
+    EventTBQueryItemHeight *pEvtTbQueryItemHeight = (EventTBQueryItemHeight*)pEvt;
+    STreeBox *pTreeBox = (STreeBox*)pEvt->sender;
+    STreeItem *pItem = pTreeBox->GetItemPanel(pEvtTbQueryItemHeight->hItem);
+
+    if(pItem->m_nLevel>0)
+    {
+        if(pEvtTbQueryItemHeight->dwState & WndState_Check)
+            pEvtTbQueryItemHeight->nItemHeight = 40;
+        else
+            pEvtTbQueryItemHeight->nItemHeight = 30;
+    }else
+    {
+        pEvtTbQueryItemHeight->nItemHeight = 50;
+    }
+}
+
+void CMainDlg::OnChromeTabNew( EventArgs *pEvt )
+{
+    static int iPage = 0;
+    EventChromeTabNew *pEvtTabNew = (EventChromeTabNew*)pEvt;
+
+    SStringT strTitle = SStringT().Format(_T("新建窗口 %d"),++iPage);
+    pEvtTabNew->pNewTab->SetWindowText(strTitle);
+    pEvtTabNew->pNewTab->SetAttribute(L"tip",S_CT2W(strTitle));
 }

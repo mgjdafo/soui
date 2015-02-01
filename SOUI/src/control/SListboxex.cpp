@@ -26,7 +26,8 @@ SListBoxEx::SListBoxEx()
     , m_pCapturedFrame(NULL)
     , m_pItemSkin(NULL)
     , m_crItemBg(CR_INVALID)
-    , m_crItemSelBg(RGBA(0,0,128,255))
+    , m_crItemSelBg(RGBA(57,145,209,255))
+	, m_crItemHotBg(RGBA(57,145,209,128))
     , m_bItemRedrawDelay(TRUE)
 {
     m_bFocusable=TRUE;
@@ -114,7 +115,6 @@ int SListBoxEx::InsertItem(int iItem,pugi::xml_node xmlNode,LPARAM dwData/*=0*/)
 
 int SListBoxEx::InsertItem(int iItem,LPCWSTR pszXml,LPARAM dwData/*=0*/)
 {
-    if(!pszXml && !m_xmlTempl) return -1;
     if(pszXml)
     {
         pugi::xml_document xmlDoc;
@@ -122,7 +122,9 @@ int SListBoxEx::InsertItem(int iItem,LPCWSTR pszXml,LPARAM dwData/*=0*/)
         return InsertItem(iItem,xmlDoc.first_child(),dwData);
     }else
     {
-        return InsertItem(iItem,m_xmlTempl.first_child(),dwData);
+        pugi::xml_node xmlNode = m_xmlTempl.child(L"template");
+        if(!xmlNode) return -1;
+        return InsertItem(iItem,xmlNode,dwData);
     }
 }
 
@@ -193,25 +195,36 @@ void SListBoxEx::SetItemData( int iItem,LPARAM lParam )
 BOOL SListBoxEx::SetItemCount(int nItems,LPCTSTR pszXmlTemplate)
 {
     if(m_arrItems.GetCount()!=0) return FALSE;
+    pugi::xml_document xmlDoc;
+    pugi::xml_node xmlTemplate = m_xmlTempl.child(L"template");
     if(pszXmlTemplate)
     {
         SStringA strUtf8=S_CT2A(pszXmlTemplate,CP_UTF8);
-        pugi::xml_document xmlDoc;
         if(!xmlDoc.load_buffer((LPCSTR)strUtf8,strUtf8.GetLength(),pugi::parse_default,pugi::encoding_utf8)) return FALSE;
-        m_xmlTempl.append_copy(xmlDoc.first_child());
+        xmlTemplate = xmlDoc.first_child();
     }
-    if(m_xmlTempl)
-    {
-        for(int i=0;i<nItems;i++)
-        {
-            InsertItem(i,m_xmlTempl.first_child());
-        }
-        return TRUE;
-    }else
-    {
+    if(!xmlTemplate) 
         return FALSE;
+    
+    
+    m_arrItems.SetCount(nItems);
+    for(int i=0;i<nItems;i++)
+    {
+        SItemPanel *pItemObj=new SItemPanel(this,xmlTemplate,this);
+        pItemObj->Move(CRect(0,0,m_rcClient.Width(),m_nItemHei));
+        if(m_pItemSkin) pItemObj->SetSkin(m_pItemSkin);
+        pItemObj->SetColor(m_crItemBg,m_crItemSelBg);
+        m_arrItems[i] = pItemObj;
+        pItemObj->SetItemIndex(i);
     }
+    
+    CRect rcClient;
+    SWindow::GetClientRect(&rcClient);
+    CSize szView(rcClient.Width(),GetItemCount()*m_nItemHei);
+    if(szView.cy>rcClient.Height()) szView.cx-=m_nSbWid;
+    SetViewSize(szView);
 
+    return TRUE;
 }
 
 int SListBoxEx::GetItemCount()
@@ -255,10 +268,6 @@ int SListBoxEx::HitTest(CPoint &pt)
     return nRet;
 }
 
-int SListBoxEx::GetScrollLineSize(BOOL bVertical)
-{
-    return m_iScrollSpeed >0 ? m_iScrollSpeed : m_nItemHei;
-}
 
 void SListBoxEx::OnPaint(IRenderTarget * pRT)
 {
@@ -296,6 +305,40 @@ void SListBoxEx::OnSize( UINT nType, CSize size )
 
 void SListBoxEx::DrawItem(IRenderTarget *pRT, CRect & rc, int iItem)
 {
+	if (iItem < 0 || iItem >= GetItemCount()) return;
+
+	BOOL bTextColorChanged = FALSE;
+	int nBgImg = 0; 
+	COLORREF crItemBg = m_crItemBg;  
+
+	if ( iItem == m_iSelItem) 
+	{//和下面那个if的条件分开，才会有sel和hot的区别
+		if (m_pItemSkin != NULL)
+			nBgImg = 2;
+		else if (CR_INVALID != m_crItemSelBg)
+			crItemBg = m_crItemSelBg;
+ 
+	}
+	else if  ((iItem == m_iHoverItem || (m_iHoverItem==-1 && iItem== m_iSelItem)) && m_bHotTrack)
+	{
+		if (m_pItemSkin != NULL)
+			nBgImg = 1;
+		else if (CR_INVALID != m_crItemHotBg)
+			crItemBg = m_crItemHotBg; 
+	}
+
+	//绘制背景
+	//     if (m_pItemSkin != NULL)
+	//         m_pItemSkin->Draw(pRT, rc, nBgImg);
+	//     else if (CR_INVALID != crItemBg)
+	//         pRT->FillSolidRect( rc, crItemBg);
+	//上面的代码在某些时候，【指定skin的时候，会导致背景异常】
+	if (CR_INVALID != crItemBg)//先画背景
+		pRT->FillSolidRect( rc, crItemBg);
+
+	if (m_pItemSkin != NULL)//有skin，则覆盖背景
+		m_pItemSkin->Draw(pRT, rc, nBgImg);
+
     EventLBGetDispInfo evt(this);
     evt.bHover=iItem == m_iHoverItem;
     evt.bSel =iItem == m_iSelItem;
@@ -405,6 +448,13 @@ void SListBoxEx::OnKeyDown( TCHAR nChar, UINT nRepCnt, UINT nFlags )
         nNewSelItem = m_iSelItem-1;
     else if (pOwner && nChar == VK_RETURN)
         nNewSelItem = m_iSelItem;
+    else if(nChar == VK_PRIOR)
+    {
+        OnScroll(TRUE,SB_PAGEUP,0);
+    }else if(nChar == VK_NEXT)
+    {
+        OnScroll(TRUE,SB_PAGEDOWN,0);
+    }
 
     if(nNewSelItem!=-1)
     {

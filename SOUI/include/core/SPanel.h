@@ -97,11 +97,11 @@ namespace SOUI
         void OnTimer(char cTimerID);
 
         void OnShowWindow(BOOL bShow, UINT nStatus);
+        
+        void OnVScroll(UINT nSBCode, UINT nPos, HWND);
+        void OnHScroll(UINT nSBCode, UINT nPos, HWND);
     protected:
-        virtual int  GetScrollLineSize(BOOL bVertical)
-        {
-            return 10;
-        }
+        virtual int  GetScrollLineSize(BOOL bVertical);
         virtual BOOL OnScroll(BOOL bVertical,UINT uCode,int nPos);
 
         int GetSbSlideLength(BOOL bVertical);
@@ -127,13 +127,15 @@ namespace SOUI
 
         DWORD        m_dwUpdateTime;    //记录调用UpdateSWindow的时间
         DWORD        m_dwUpdateInterval;
-
+        
+        int          m_nScrollSpeed;
         SOUI_ATTRS_BEGIN()
             ATTR_CUSTOM(L"sbSkin",OnAttrScrollbarSkin)
             ATTR_INT(L"sbArrowSize", m_nSbArrowSize, FALSE)
             ATTR_INT(L"sbWid", m_nSbWid, FALSE)
             ATTR_INT(L"sbEnable", m_wBarEnable, FALSE)
             ATTR_UINT(L"updateInterval", m_dwUpdateInterval, FALSE)
+            ATTR_UINT(L"scrollSpeed",m_nScrollSpeed,FALSE)
         SOUI_ATTRS_END()
 
         SOUI_MSG_MAP_BEGIN()
@@ -147,6 +149,8 @@ namespace SOUI
             MSG_WM_MOUSEWHEEL(OnMouseWheel)
             MSG_WM_TIMER_EX(OnTimer)
             MSG_WM_SHOWWINDOW(OnShowWindow)
+            MSG_WM_VSCROLL(OnVScroll)
+            MSG_WM_HSCROLL(OnHScroll)
         SOUI_MSG_MAP_END()
     };
 
@@ -166,8 +170,6 @@ namespace SOUI
         void SetViewOrigin(CPoint pt);
 
     protected:
-        int OnCreate(LPVOID);
-
         void OnSize(UINT nType,CSize size);
     protected:
         virtual void OnViewSizeChanged(CSize szOld,CSize szNew){}
@@ -197,7 +199,6 @@ namespace SOUI
         SOUI_ATTRS_END()
 
         SOUI_MSG_MAP_BEGIN()
-            MSG_WM_CREATE(OnCreate)
             MSG_WM_SIZE(OnSize)
         SOUI_MSG_MAP_END()
     protected:

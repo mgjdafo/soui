@@ -161,8 +161,20 @@ namespace SOUI
             {
                 return ;
             }
-
+            HWND hWnd = NULL;
+            
+            if(!bVisible)
+            {
+                HWND hFocus = ::GetFocus();
+                hWnd = hFocus;
+                while(hWnd && hWnd !=window)
+                {
+                    hWnd=::GetParent(hWnd);
+                }
+            }
             ShowWindow(window, bVisible ? SW_SHOW : SW_HIDE);
+            if(hWnd == window) //避免主窗口失去焦点
+                ::SetFocus(GetContainer()->GetHostHwnd());
         }
     }
 

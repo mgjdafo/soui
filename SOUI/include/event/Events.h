@@ -62,6 +62,9 @@ namespace SOUI
         EVT_CTXMENU,
         EVT_SETFOCUS,
         EVT_KILLFOCUS,
+        EVT_DESTROY,
+        EVT_VISIBLECHANGED,
+        EVT_STATECHANGED,
         EVT_SCROLL,
         EVT_OFEVENT,    //消息二次包装
         EVT_OFPANEL,    //一个itemPanel中的消息的二次包装
@@ -73,6 +76,8 @@ namespace SOUI
 
         EVT_TAB_SELCHANGING=11000,
         EVT_TAB_SELCHANGED,
+        EVT_TAB_ITEMHOVER,
+        EVT_TAB_ITEMLEAVE,
 
         EVT_LB_GETDISPINFO=12000,
         EVT_LB_SELCHANGING,
@@ -85,6 +90,7 @@ namespace SOUI
         EVT_TB_GETDISPINFO=14000,    
         EVT_TB_SELCHANGING,
         EVT_TB_SELCHANGED,
+        EVT_TB_QUERYITEMHEIGHT,
 
         EVT_TC_SELCHANGING=15000,
         EVT_TC_SELCHANGED,
@@ -155,6 +161,17 @@ namespace SOUI
         enum{EventID=EVT_KILLFOCUS};
         virtual UINT GetEventID(){return EventID;}
     };
+    
+    class SOUI_EXP EventStateChanged : public EventArgs
+    {
+    public:
+        EventStateChanged(SWindow *pWnd):EventArgs(pWnd){}
+        enum{EventID=EVT_STATECHANGED};
+        virtual UINT GetEventID(){return EventID;}
+
+        DWORD dwOldState;
+        DWORD dwNewState;
+    };
 
     class SOUI_EXP EventScroll : public EventArgs
     {
@@ -223,6 +240,24 @@ namespace SOUI
         UINT        uNewSel;
     };
 
+    class SOUI_EXP EventTabItemHover : public EventArgs
+    {
+    public:
+        EventTabItemHover(SWindow *pWnd):EventArgs(pWnd){}
+        enum{EventID=EVT_TAB_ITEMHOVER};
+        virtual UINT GetEventID(){return EventID;}
+        int iHover;
+    };
+
+    class SOUI_EXP EventTabItemLeave : public EventArgs
+    {
+    public:
+        EventTabItemLeave(SWindow *pWnd):EventArgs(pWnd){}
+        enum{EventID=EVT_TAB_ITEMLEAVE};
+        virtual UINT GetEventID(){return EventID;}
+        int iLeave;
+    };
+
     class SOUI_EXP EventLBGetDispInfo : public EventArgs
     {
     public:
@@ -289,6 +324,17 @@ namespace SOUI
         virtual UINT GetEventID(){return EventID;}
         HSTREEITEM hNewSel;
         HSTREEITEM hOldSel;
+    };
+    
+    class SOUI_EXP EventTBQueryItemHeight : public EventArgs
+    {
+    public:
+        EventTBQueryItemHeight(SWindow *pWnd):EventArgs(pWnd){}
+        enum{EventID=EVT_TB_QUERYITEMHEIGHT};
+        virtual UINT GetEventID(){return EventID;}
+        HSTREEITEM hItem;
+        DWORD      dwState;    //状态,和SWindow::GetState的值一致
+        int        nItemHeight;//返回值保存到这里
     };
 
     class SOUI_EXP EventRENotify : public EventArgs

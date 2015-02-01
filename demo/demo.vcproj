@@ -141,7 +141,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm200 -w34100 -w34189"
-				Optimization="0"
+				Optimization="1"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\utilities\include&quot;,&quot;..\soui\include&quot;,&quot;..\third-part\wke\include&quot;,&quot;..\components&quot;,&quot;..\config&quot;,..\tools\mkspecs\win32-msvc2008"
 				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,NDEBUG"
 				GeneratePreprocessedFile="0"
@@ -220,7 +220,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\controls.extend\reole\dataobject.cpp"
+				>
+			</File>
+			<File
 				RelativePath="demo.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FormatMsgDlg.cpp"
 				>
 			</File>
 			<File
@@ -232,10 +240,6 @@
 				>
 			</File>
 			<File
-				RelativePath="skinole\ImageOle.cpp"
-				>
-			</File>
-			<File
 				RelativePath="MainDlg.cpp"
 				>
 			</File>
@@ -244,11 +248,23 @@
 				>
 			</File>
 			<File
-				RelativePath="..\controls.extend\SFadeFrame.cpp"
+				RelativePath="..\controls.extend\reole\RichEditOle.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\controls.extend\SFlyWnd.cpp"
+				RelativePath="..\controls.extend\SChatEdit.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\SChromeTabCtrl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\sfadeframe.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\sflywnd.cpp"
 				>
 			</File>
 			<File
@@ -256,11 +272,39 @@
 				>
 			</File>
 			<File
+				RelativePath="..\controls.extend\SIECtrl.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\controls.extend\sipaddressctrl.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\controls.extend\SRadioBox2.cpp"
+				RelativePath="..\controls.extend\propgrid\spropertygrid.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\propgrid\propitem\spropertyitem-color.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\propgrid\propitem\spropertyitem-option.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\propgrid\propitem\spropertyitem-size.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\propgrid\propitem\spropertyitem-text.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\propgrid\spropertyitembase.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\sradiobox2.cpp"
 				>
 			</File>
 			<File
@@ -276,7 +320,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\uianimation\UiAnimationWnd.cpp"
+				RelativePath="uianimation\uianimationwnd.cpp"
 				>
 			</File>
 		</Filter>
@@ -286,6 +330,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\controls.extend\reole\dataobject.h"
+				>
+			</File>
+			<File
 				RelativePath="..\controls.extend\FileHelper.h"
 				>
 			</File>
@@ -294,15 +342,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\FormatMsgDlg.h"
+				>
+			</File>
+			<File
 				RelativePath="httpsvr\genericserver.h"
 				>
 			</File>
 			<File
 				RelativePath="httpsvr\httpserver.h"
-				>
-			</File>
-			<File
-				RelativePath="skinole\ImageOle.h"
 				>
 			</File>
 			<File
@@ -318,15 +366,27 @@
 				>
 			</File>
 			<File
+				RelativePath="..\controls.extend\reole\RichEditOle.h"
+				>
+			</File>
+			<File
 				RelativePath="..\controls.extend\gif\SAniImgFrame.h"
 				>
 			</File>
 			<File
-				RelativePath="..\controls.extend\SFadeFrame.h"
+				RelativePath="..\controls.extend\SChatEdit.h"
 				>
 			</File>
 			<File
-				RelativePath="..\controls.extend\SFlyWnd.h"
+				RelativePath="..\controls.extend\SChromeTabCtrl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\sfadeframe.h"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\sflywnd.h"
 				>
 			</File>
 			<File
@@ -334,11 +394,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\controls.extend\SIECtrl.h"
+				>
+			</File>
+			<File
 				RelativePath="..\controls.extend\sipaddressctrl.h"
 				>
 			</File>
 			<File
-				RelativePath="..\controls.extend\SRadioBox2.h"
+				RelativePath="..\controls.extend\propgrid\SPropertyGrid.h"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\sradiobox2.h"
 				>
 			</File>
 			<File
@@ -374,15 +442,19 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\controls.extend\SVscrollbar.h"
+				>
+			</File>
+			<File
 				RelativePath="..\controls.extend\SWkeWebkit.h"
 				>
 			</File>
 			<File
-				RelativePath=".\uianimation\UIAnimation.h"
+				RelativePath="uianimation\uianimation.h"
 				>
 			</File>
 			<File
-				RelativePath=".\uianimation\UiAnimationWnd.h"
+				RelativePath="uianimation\uianimationwnd.h"
 				>
 			</File>
 			<File
@@ -420,128 +492,8 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
-		<Filter
-			Name="propertygrid"
-			>
-			<File
-				RelativePath="..\controls.extend\propgrid\SPropertyEmbedWndHelper.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\SPropertyGrid.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\SPropertyGrid.h"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\propitem\SPropertyItem-Color.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\propitem\SPropertyItem-Color.h"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\SPropertyItem-i.h"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\propitem\SPropertyItem-Option.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\propitem\SPropertyItem-Option.h"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\propitem\SPropertyItem-Size.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\propitem\SPropertyItem-Size.h"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\propitem\SPropertyItem-Text.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\propitem\SPropertyItem-Text.h"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\SPropertyItemBase.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\controls.extend\propgrid\SPropertyItemBase.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="animation"
-			>
-			<File
-				RelativePath=".\uianimation\UIAnimation.h"
-				>
-			</File>
-			<File
-				RelativePath=".\uianimation\UiAnimationWnd.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\uianimation\UiAnimationWnd.h"
-				>
-			</File>
-		</Filter>
 		<File
 			RelativePath="demo.rc"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\dlg_main.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\init.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\menu_test.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\page_about.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\page_ctrls.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\page_layout.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\page_misc.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\page_skia.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\page_treebox.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\page_webkit.xml"
-			>
-		</File>
-		<File
-			RelativePath=".\uires\xml\treectrl.xml"
 			>
 		</File>
 	</Files>

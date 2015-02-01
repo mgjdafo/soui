@@ -10,6 +10,11 @@
 #include "../controls.extend/SFlyWnd.h"
 #include "../controls.extend/SFadeFrame.h"
 #include "../controls.extend/sradiobox2.h"
+#include "../controls.extend/SVscrollbar.h"
+#include "../controls.extend/SChromeTabCtrl.h"
+#include "../controls.extend/siectrl.h"
+#include "../controls.extend/schatedit.h"
+
 #include "uianimation/UiAnimationWnd.h"
 
 #if defined(_DEBUG) && !defined(_WIN64)
@@ -36,7 +41,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*
     //必须要调用OleInitialize来初始化运行环境
     HRESULT hRes = OleInitialize(NULL);
     SASSERT(SUCCEEDED(hRes));
-
+//     LoadLibrary(L"E:\\soui.taobao\\richedit\\Debug\\riched20.dll");
+        
     int nRet = 0; 
 
     SComMgr *pComMgr = new SComMgr;
@@ -145,10 +151,14 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*
         }
         theApp->RegisterWndFactory(TplSWindowFactory<SGifPlayer>());//注册GIFPlayer
         theApp->RegisterSkinFactory(TplSkinFactory<SSkinGif>());//注册SkinGif
-        theApp->RegisterSkinFactory(TplSkinFactory<SSkinAPNG>());//注册SkinGif
+        theApp->RegisterSkinFactory(TplSkinFactory<SSkinAPNG>());//注册SSkinAPNG
+        theApp->RegisterSkinFactory(TplSkinFactory<SSkinVScrollbar>());//注册纵向滚动条皮肤
 
         theApp->RegisterWndFactory(TplSWindowFactory<SIPAddressCtrl>());//注册IP控件
         theApp->RegisterWndFactory(TplSWindowFactory<SPropertyGrid>());//注册属性表控件
+        theApp->RegisterWndFactory(TplSWindowFactory<SChromeTabCtrl>());//注册ChromeTabCtrl
+        theApp->RegisterWndFactory(TplSWindowFactory<SIECtrl>());//注册IECtrl
+        theApp->RegisterWndFactory(TplSWindowFactory<SChatEdit>());//注册ChatEdit
         
         if(SUCCEEDED(CUiAnimation::Init()))
         {
@@ -158,7 +168,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*
         theApp->RegisterWndFactory(TplSWindowFactory<SFadeFrame>());//注册渐显隐动画控件
         theApp->RegisterWndFactory(TplSWindowFactory<SRadioBox2>());//注册渐显隐动画控件
         SSkinGif::Gdiplus_Startup();
-
+        
+        
         //加载系统资源
         HMODULE hSysResource=LoadLibrary(SYS_NAMED_RESOURCE);
         if(hSysResource)
@@ -192,6 +203,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*
         //卸载菜单边框绘制hook
         CMenuWndHook::UnInstallHook();
         CUiAnimation::Free();
+                
         SSkinGif::Gdiplus_Shutdown();
     }
     delete pComMgr;

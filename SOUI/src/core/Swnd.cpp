@@ -43,6 +43,10 @@ namespace SOUI
     {
         m_evtSet.addEvent(EVT_MOUSE_HOVER);
         m_evtSet.addEvent(EVT_MOUSE_LEAVE);
+        m_evtSet.addEvent(EVT_VISIBLECHANGED);
+        m_evtSet.addEvent(EVT_STATECHANGED);
+        m_evtSet.addEvent(EVT_DESTROY);
+        
         m_evtSet.addEvent(EventCmd::EventID);
         m_evtSet.addEvent(EventCtxMenu::EventID);
         m_evtSet.addEvent(EventSetFocus::EventID);
@@ -317,6 +321,9 @@ namespace SOUI
     void SWindow::InsertChild(SWindow *pNewChild,SWindow *pInsertAfter/*=ICWND_LAST*/)
     {
         TestMainThread();
+        if(pNewChild->m_pParent == this) 
+            return;
+
         pNewChild->SetContainer(GetContainer());
         pNewChild->m_pParent=this;
         pNewChild->m_pPrevSibling=pNewChild->m_pNextSibling=NULL;
@@ -360,14 +367,25 @@ namespace SOUI
     BOOL SWindow::RemoveChild(SWindow *pChild)
     {
         TestMainThread();
-        if(this != pChild->GetParent()) return FALSE;
+        if(this != pChild->GetParent()) 
+            return FALSE;
+
         SWindow *pPrevSib=pChild->m_pPrevSibling;
         SWindow *pNextSib=pChild->m_pNextSibling;
-        if(pPrevSib) pPrevSib->m_pNextSibling=pNextSib;
-        else m_pFirstChild=pNextSib;
-        if(pNextSib) pNextSib->m_pPrevSibling=pPrevSib;
-        else m_pLastChild=pPrevSib;
+
+        if(pPrevSib) 
+            pPrevSib->m_pNextSibling=pNextSib;
+        else 
+            m_pFirstChild=pNextSib;
+
+        if(pNextSib) 
+            pNextSib->m_pPrevSibling=pPrevSib;
+        else 
+            m_pLastChild=pPrevSib;
+
         pChild->m_pParent=NULL;
+        pChild->m_pNextSibling = NULL;
+        pChild->m_pPrevSibling = NULL;
         m_nChildrenCount--;
         return TRUE;
     }
@@ -931,6 +949,9 @@ namespace SOUI
 
     void SWindow::OnDestroy()
     {
+        EventCmnArgs evt(this,EVT_DESTROY);
+        FireEvent(evt);
+        
         //destroy children windows
         SWindow *pChild=m_pFirstChild;
         while (pChild)
@@ -1070,8 +1091,18 @@ namespace SOUI
 
     CSize SWindow::GetDesiredSize(LPCRECT pRcContainer)
     {
-        SASSERT(m_layout.IsFitContent(PD_ALL));
+        CSize szRet;
+        if(m_layout.IsSpecifySize(PD_X))
+        {
+            szRet.cx = m_layout.uSpecifyWidth;
+        }
+        if(m_layout.IsSpecifySize(PD_Y))
+        {
+            szRet.cy = m_layout.uSpecifyHeight;
+        }
 
+        if(szRet.cx && szRet.cy) 
+            return szRet;
 
         int nTestDrawMode = GetTextAlign() & ~(DT_CENTER | DT_RIGHT | DT_VCENTER | DT_BOTTOM);
 
@@ -1089,9 +1120,10 @@ namespace SOUI
         rcTest.right += m_style.m_nMarginX * 2;
         rcTest.bottom += m_style.m_nMarginY * 2;
 
-        CSize szRet = rcTest.Size();
-        if(!m_layout.IsFitContent(PD_X)) szRet.cx = m_layout.uSpecifyWidth;
-        if(!m_layout.IsFitContent(PD_Y)) szRet.cy = m_layout.uSpecifyHeight;
+        if(m_layout.IsFitContent(PD_X)) 
+            szRet.cx = rcTest.Width();
+        if(m_layout.IsFitContent(PD_Y)) 
+            szRet.cy = rcTest.Height();
         return szRet;
     }
 
@@ -1172,6 +1204,9 @@ namespace SOUI
             SWindow *pParent=GetParent();
             if(pParent) pParent->UpdateChildrenPosition();
         }
+        
+        EventCmnArgs evtShow(this,EVT_VISIBLECHANGED);
+        FireEvent(evtShow);
     }
 
 
@@ -1399,14 +1434,15 @@ namespace SOUI
     {
         SASSERT(m_pGetRTData);
 
-        if(m_pGetRTData->gdcFlags == OLEDC_PAINTBKGND)
-        {//从指定的窗口开始绘制前景
-            _PaintRegion2(pRT,m_pGetRTData->rgn,m_uZorder+1,ZORDER_MAX);
-        }
-        pRT->PopClip();//对应_GetRenderTarget中调用的PushClipRegion
-
         SWindow *pRoot = GetRoot();
         SWindow *pLayerWindow = _GetCurrentLayeredWindow();
+
+        if(m_pGetRTData->gdcFlags == OLEDC_PAINTBKGND)
+        {//从指定的窗口开始绘制前景
+            SWindow * pLayer = pLayerWindow?pLayerWindow:pRoot;
+            pLayer->_PaintRegion2(pRT,m_pGetRTData->rgn,m_uZorder+1,ZORDER_MAX);
+        }
+        pRT->PopClip();//对应_GetRenderTarget中调用的PushClipRegion
 
         if(pLayerWindow)
         {//存在一个渲染层
@@ -2074,5 +2110,18 @@ namespace SOUI
         SASSERT(IsLayeredWindow());
         if(!m_layeredRT)  GETRENDERFACTORY->CreateRenderTarget(&m_layeredRT,0,0);
         return m_layeredRT;
+    }
+
+    void SWindow::OnStateChanging( DWORD dwOldState,DWORD dwNewState )
+    {
+        
+    }
+
+    void SWindow::OnStateChanged( DWORD dwOldState,DWORD dwNewState )
+    {
+        EventStateChanged evt(this);
+        evt.dwOldState = dwOldState;
+        evt.dwNewState = dwNewState;
+        FireEvent(evt);
     }
 }//namespace SOUI

@@ -294,15 +294,6 @@ protected:
     int InsertItem(int nIndex, LPLBITEM pItem);
 
     /**
-     * SListBox::GetScrollLineSize
-     * @brief    获取滚动大小
-     * @param    BOOL bVertical -- 是否是垂直
-     *
-     * Describe  获取滚动大小
-     */
-    virtual int GetScrollLineSize(BOOL bVertical);
-
-    /**
      * SListBox::DrawItem
      * @brief    绘制
      * @param    IRenderTarget *pRT -- 绘制设备
@@ -433,6 +424,8 @@ protected:
      */
     void OnShowWindow(BOOL bShow, UINT nStatus);
 
+
+    void OnMouseLeave();
 protected:
 
     SArray<LPLBITEM>    m_arrItems;  /**< 保存item */
@@ -449,6 +442,7 @@ protected:
     COLORREF m_crItemBg;    /**< 背景色 */
     COLORREF m_crItemBg2;   /**< 背景色 */
     COLORREF m_crItemSelBg; /**< 选中背景色 */
+	COLORREF m_crItemHotBg; /**< Hot背景色 */
     COLORREF m_crText;      /**< 背景色 */
     COLORREF m_crSelText;   /**< 选中背景色 */
     ISkinObj *m_pItemSkin, *m_pIconSkin;
@@ -456,13 +450,13 @@ protected:
 public:
 
     SOUI_ATTRS_BEGIN()
-        ATTR_INT(L"scrollSpeed", m_iScrollSpeed, FALSE)
         ATTR_INT(L"itemHeight", m_nItemHei, FALSE)
         ATTR_SKIN(L"itemSkin", m_pItemSkin, TRUE)
         ATTR_SKIN(L"iconSkin", m_pIconSkin, TRUE)
         ATTR_COLOR(L"colorItemBkgnd",m_crItemBg,FALSE)
         ATTR_COLOR(L"colorItemBkgnd2", m_crItemBg2, FALSE)
         ATTR_COLOR(L"colorItemSelBkgnd",m_crItemSelBg,FALSE)
+		ATTR_COLOR(L"colorItemHotBkgnd",m_crItemHotBg,FALSE)
         ATTR_COLOR(L"colorText",m_crText,FALSE)
         ATTR_COLOR(L"colorSelText",m_crSelText,FALSE)
         ATTR_INT(L"icon-x", m_ptIcon.x, FALSE)
@@ -483,6 +477,7 @@ public:
         MSG_WM_KEYDOWN(OnKeyDown)
         MSG_WM_CHAR(OnChar)
         MSG_WM_SHOWWINDOW(OnShowWindow)
+		MSG_WM_MOUSELEAVE(OnMouseLeave)
     SOUI_MSG_MAP_END()
 };
 

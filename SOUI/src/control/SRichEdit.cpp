@@ -664,7 +664,6 @@ LRESULT SRichEdit::OnCreate( LPVOID )
 void SRichEdit::OnDestroy()
 {
     OnEnableDragDrop(FALSE);
-    __super::OnDestroy();
 
     if(m_pTxtHost)
     {
@@ -672,6 +671,7 @@ void SRichEdit::OnDestroy()
         m_pTxtHost->Release();
         m_pTxtHost=NULL;
     }
+    __super::OnDestroy();
 }
 
 
@@ -683,10 +683,8 @@ void SRichEdit::OnPaint( IRenderTarget * pRT )
     HDC hdc=pRT->GetDC(0);
 
     ALPHAINFO ai;
-    if(GetContainer()->IsTranslucent())
-    {
-        CGdiAlpha::AlphaBackup(hdc,&rcClient,ai);
-    }
+    CGdiAlpha::AlphaBackup(hdc,&rcClient,ai);
+
     LONG lPos =0;
     HRESULT hr=m_pTxtHost->GetTextService()->TxGetVScroll(NULL,NULL,&lPos,NULL,NULL);
     RECTL rcL= {rcClient.left,rcClient.top,rcClient.right,rcClient.bottom};
@@ -704,10 +702,7 @@ void SRichEdit::OnPaint( IRenderTarget * pRT )
         NULL,                    // Call back parameter
         TXTVIEW_ACTIVE);
 
-    if(GetContainer()->IsTranslucent())
-    {
-        CGdiAlpha::AlphaRestore(ai);
-    }
+    CGdiAlpha::AlphaRestore(ai);
     pRT->ReleaseDC(hdc);
     pRT->PopClip();
 }
@@ -819,7 +814,13 @@ BOOL SRichEdit::SwndProc( UINT uMsg,WPARAM wParam,LPARAM lParam,LRESULT & lResul
 {
     if(m_pTxtHost && m_pTxtHost->GetTextService())
     {
-       if(m_pTxtHost->GetTextService()->TxSendMessage(uMsg,wParam,lParam,&lResult)==S_OK)
+        if(uMsg == EM_GETRECT)
+        {
+            SetMsgHandled(TRUE);
+            GetClientRect((LPRECT)lParam);
+            return TRUE;
+        }
+        if(m_pTxtHost->GetTextService()->TxSendMessage(uMsg,wParam,lParam,&lResult)==S_OK)
         {
             SetMsgHandled(TRUE);
             return TRUE;
@@ -1322,14 +1323,14 @@ LRESULT SRichEdit::OnSetLimitText( UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 LRESULT SRichEdit::OnSetCharFormat( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-    if(!FValidCF((CHARFORMAT2W *) lParam))
-    {
+    if(wParam & SCF_DEFAULT && !FValidCF((CHARFORMAT2W *) lParam))
+    {//设置默认字体只支持CHARFORMAT2W
+        STRACE(_T("set default char format failed! only CHARFORMAT2W can be set for default char format"));
         return 0;
     }
-
-    if(wParam & SCF_SELECTION)
-        m_pTxtHost->GetTextService()->TxSendMessage(uMsg,wParam,lParam,NULL);
-    else
+    
+    m_pTxtHost->GetTextService()->TxSendMessage(uMsg,wParam,lParam,NULL);
+    if(wParam & SCF_DEFAULT)
     {
         m_cfDef=*(CHARFORMAT2W *)lParam;
         m_pTxtHost->GetTextService()->OnTxPropertyBitsChange(TXTBIT_CHARFORMATCHANGE,TXTBIT_CHARFORMATCHANGE);
@@ -1445,7 +1446,7 @@ HRESULT SRichEdit::OnAttrTextColor( const SStringW &  strValue,BOOL bLoading )
     return S_OK;
 }
 
-DWORD CALLBACK EditStreamCallback_FILE(
+DWORD CALLBACK EditStreamInCallback_FILE(
                                   DWORD_PTR dwCookie,
                                   LPBYTE pbBuff,
                                   LONG cb,
@@ -1458,12 +1459,25 @@ DWORD CALLBACK EditStreamCallback_FILE(
     return 0;
 }
 
+DWORD CALLBACK EditStreamOutCallback_FILE(
+                                       DWORD_PTR dwCookie,
+                                       LPBYTE pbBuff,
+                                       LONG cb,
+                                       LONG * pcb 
+                                       )
+{
+    FILE *f=(FILE*)dwCookie;
+    LONG nWrited = fwrite(pbBuff,1,cb,f);
+    if(pcb) *pcb = nWrited;
+    return 0;
+}
+
 struct MemBlock{
     LPCBYTE  pBuf;
     LONG     nRemains;
 };
 
-DWORD CALLBACK EditStreamCallback_MemBlock(
+DWORD CALLBACK EditStreamInCallback_MemBlock(
                                        DWORD_PTR dwCookie,
                                        LPBYTE pbBuff,
                                        LONG cb,
@@ -1512,20 +1526,12 @@ HRESULT SRichEdit::OnAttrRTF( const SStringW & strValue,BOOL bLoading )
                 mb.nRemains=dwSize;
                 GETRESPROVIDER->GetRawBuffer(lstSrc[0],lstSrc[1],mybuf,dwSize);
                 es.dwCookie=(DWORD_PTR)&mb;
-                es.pfnCallback=EditStreamCallback_MemBlock;
+                es.pfnCallback=EditStreamInCallback_MemBlock;
                 SSendMessage(EM_STREAMIN,SF_RTF,(LPARAM)&es);
             }
         }else
         {//load from file
-            FILE *f=_tfopen(lstSrc[0],_T("rb"));
-            if(f)
-            {
-                EDITSTREAM es;
-                es.dwCookie=(DWORD_PTR)f;
-                es.pfnCallback=EditStreamCallback_FILE;
-                SSendMessage(EM_STREAMIN,SF_RTF,(LPARAM)&es);
-                fclose(f);
-            }
+            LoadRtf(lstSrc[0]);
         }
         return S_FALSE;
     }
@@ -1570,6 +1576,29 @@ HRESULT SRichEdit::OnAttrAlign( const SStringW & strValue,BOOL bLoading )
     return bLoading?S_FALSE:S_OK;
 }
 
+DWORD SRichEdit::SaveRtf( LPCTSTR pszFileName )
+{
+    FILE *f=_tfopen(pszFileName,_T("wb"));
+    if(!f) return 0;
+    EDITSTREAM es;
+    es.dwCookie=(DWORD_PTR)f;
+    es.pfnCallback=EditStreamOutCallback_FILE;
+    DWORD dwRet=SSendMessage(EM_STREAMOUT,SF_RTF,(LPARAM)&es);
+    fclose(f);
+    return dwRet;
+}
+
+DWORD SRichEdit::LoadRtf( LPCTSTR pszFileName )
+{
+    FILE *f=_tfopen(pszFileName,_T("rb"));
+    if(!f) return FALSE;
+    EDITSTREAM es;
+    es.dwCookie=(DWORD_PTR)f;
+    es.pfnCallback=EditStreamInCallback_FILE;
+    DWORD dwRet=SSendMessage(EM_STREAMIN,SF_RTF,(LPARAM)&es);
+    fclose(f);
+    return dwRet;
+}
 //////////////////////////////////////////////////////////////////////////
 
 SEdit::SEdit() :m_crCue(RGBA(0xcc,0xcc,0xcc,0xff))

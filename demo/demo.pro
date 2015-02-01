@@ -26,8 +26,8 @@ PRECOMPILED_HEADER = stdafx.h
 
 # Input
 HEADERS += MainDlg.h \
+		   FormatMsgDlg.h \
            resource.h \
-           skinole/ImageOle.h \
            wtlhelper/whwindow.h \
            ../controls.extend/SWkeWebkit.h \
            ../controls.extend/gif/SAniImgFrame.h \
@@ -40,6 +40,11 @@ HEADERS += MainDlg.h \
            ../controls.extend/sflywnd.h \
            ../controls.extend/sfadeframe.h \
            ../controls.extend/sradiobox2.h \
+           ../controls.extend/SChromeTabCtrl.h \
+           ../controls.extend/siectrl.h \
+           ../controls.extend/schatedit.h \
+           ../controls.extend/reole/richeditole.h \
+           ../controls.extend/reole/dataobject.h \
            httpsvr/filereader-i.h \
            httpsvr/genericserver.h \
            httpsvr/httpserver.h \
@@ -49,7 +54,7 @@ HEADERS += MainDlg.h \
 		   
 SOURCES += demo.cpp \
            MainDlg.cpp \
-           skinole/ImageOle.cpp \
+		   FormatMsgDlg.cpp \
            ../controls.extend/SWkeWebkit.cpp \
            ../controls.extend/gif/SGifPlayer.cpp \
            ../controls.extend/gif/SSkinGif.cpp \
@@ -64,6 +69,11 @@ SOURCES += demo.cpp \
            ../controls.extend/sflywnd.cpp \
            ../controls.extend/sfadeframe.cpp \
            ../controls.extend/sradiobox2.cpp \
+           ../controls.extend/SChromeTabCtrl.cpp \
+           ../controls.extend/siectrl.cpp \
+           ../controls.extend/schatedit.cpp \
+           ../controls.extend/reole/richeditole.cpp \
+           ../controls.extend/reole/dataobject.cpp \
            httpsvr/genericserver.cpp \
            httpsvr/httpserver.cpp \
            memflash.cpp	\
