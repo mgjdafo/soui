@@ -97,14 +97,6 @@ namespace SOUI
         int      m_iIcon;
     };
 
-    typedef enum tagSLIDEDIR
-    {
-        SD_LEFTRIGHT=0,
-        SD_RIGHTLEFT,
-        SD_TOPBOTTOM,
-        SD_BOTTOMTOP,
-    } SLIDEDIR;
-
     /** 
     * @class     STabCtrl
     * @brief     tab控件
@@ -132,7 +124,7 @@ namespace SOUI
         int m_nTabAlign;   /**< 排列方式 */
 
         SArray<STabPage*> m_lstPages;  /**< tab标签页面链表 */
-
+        STabSlider *      m_tabSlider;
         enum
         {
             AlignTop,
@@ -172,7 +164,7 @@ namespace SOUI
         }
 
         SWindow * GetPage(int iPage);
-        SWindow * GetPage(LPCTSTR pszTitle);
+        SWindow * GetPage(LPCTSTR pszName,BOOL bTitle=TRUE);
 
         /**
         * STabCtrl::SetCurSel
@@ -192,7 +184,7 @@ namespace SOUI
         *
         * Describe  获取当前选中 
         */
-        BOOL SetCurSel(LPCTSTR pszTitle);
+        BOOL SetCurSel(LPCTSTR pszName,BOOL bTitle=TRUE);
 
         /**
         * STabCtrl::SetItemTitle
@@ -355,6 +347,9 @@ namespace SOUI
     protected:
         int HitTest(CPoint pt);
         
+        int GetPageIndex(LPCTSTR pszName,BOOL bTitle);
+        
+        void OnSliderFinish();
     protected:
         /**
         * STabCtrl::OnPaint

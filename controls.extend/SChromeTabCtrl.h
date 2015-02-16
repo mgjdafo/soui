@@ -55,10 +55,10 @@ namespace SOUI
         int         iNewSel;
     };
 
-    class SChromeTab;
     class SChromeTabCtrl : public SWindow, public ITimelineHandler
     {
         SOUI_CLASS_NAME(SChromeTabCtrl,L"chromeTabCtrl")
+        friend class SChromeTab;
     public:
         enum TABDIR{
             TDIR_HORZ,
@@ -70,13 +70,14 @@ namespace SOUI
         
         BOOL InsertTab(LPCTSTR pszTitle,int iPos = -1);
         
+        BOOL RemoveTab(int iTab);
+        
         void SetCurSel(int iTab,bool bSendNotify = true);
         
-        int GetCurSel() const
-        {
-            return m_iCurSel;
-        }
+        int GetCurSel() const;
     protected:
+        int ChangeTabPos(SChromeTab* pCurMove,CPoint ptCur);
+
         virtual BOOL CreateChildren(pugi::xml_node xmlNode);
         virtual void UpdateChildrenPosition();
         
@@ -86,8 +87,6 @@ namespace SOUI
         bool OnBtnCloseTabClick(EventArgs *pEvt);
         bool OnTabClick(EventArgs *pEvt);
     
-        int GetTabIndex(const SChromeTab* pTab)const;
-
         int OnCreate(LPVOID);
         void OnDestroy();
 
@@ -98,6 +97,7 @@ namespace SOUI
 
         SOUI_ATTRS_BEGIN()
             ATTR_INT(L"tabDesiredSize",m_nDesiredSize,FALSE)
+            ATTR_INT(L"enableDrag",m_bEnableDrag,FALSE)
             ATTR_ENUM_BEGIN(L"tabAlign",TABDIR,FALSE)
                 ATTR_ENUM_VALUE(L"vertical",TDIR_VERT)
                 ATTR_ENUM_VALUE(L"horizontal",TDIR_HORZ)
@@ -106,13 +106,14 @@ namespace SOUI
 
         int     m_nDesiredSize;
         TABDIR  m_tabAlign;
+        BOOL    m_bEnableDrag;
+        
         SArray<SChromeTab*> m_lstTab;
 
         SChromeTab *        m_pBtnNew;
-
+        SChromeTab *        m_pSelTab;
+        
         pugi::xml_document  m_xmlStyle;
-
-        int                 m_iCurSel;
     };
 
 }

@@ -67,16 +67,6 @@ if %selected%==1 (
 	goto error
 )
 
-rem CLR
-SET /p selected=5.选择CLR开关[1=不支持;2=支持]:
-if %selected%==1 (
-	rem do nothing
-) else if %selected%==2 (
-	SET cfg=!cfg! USING_CLR
-) else (
-	goto error
-)
-
 rem CRT
 SET /p selected=6.选择CRT链接模式[1=静态链接(MT);2=动态链接(MD)]:
 if %selected%==1 (
