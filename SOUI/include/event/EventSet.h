@@ -8,7 +8,7 @@ namespace SOUI
     class SEvent
     {
     public:
-        SEvent(DWORD dwEventID):m_dwEventID(dwEventID)
+        SEvent(DWORD dwEventID,LPCWSTR pszEventName):m_dwEventID(dwEventID),m_strEventName(pszEventName)
         {
 
         }
@@ -22,8 +22,13 @@ namespace SOUI
             m_evtSlots.RemoveAll();
         }
 
-        DWORD GetEventID(){return m_dwEventID;}
+        DWORD GetID(){return m_dwEventID;}
 
+        SStringW GetName() const {return m_strEventName;}
+
+        SStringA GetScriptHandler() const {return m_strScriptHandler;}
+
+        void SetScriptHandler(const SStringA & strScriptHandler){m_strScriptHandler = strScriptHandler;}
         /*!
         \brief
             Subscribes some function or object to the Event
@@ -34,9 +39,9 @@ namespace SOUI
 
         \return void
         */
-        bool subscribe(const SlotFunctorBase& slot);
+        bool subscribe(const ISlotFunctor& slot);
 
-        bool unsubscribe(const SlotFunctorBase& slot);
+        bool unsubscribe(const ISlotFunctor& slot);
 
         void operator()(EventArgs& args)
         {
@@ -47,14 +52,18 @@ namespace SOUI
         }
 
     protected:
-        int findSlotFunctor(const SlotFunctorBase& slot);
+        int findSlotFunctor(const ISlotFunctor& slot);
 
         DWORD    m_dwEventID;
-        SArray<SlotFunctorBase *> m_evtSlots;
+        SStringW m_strEventName;
+        SStringA m_strScriptHandler;
+
+        SArray<ISlotFunctor *> m_evtSlots;
     };
 
     class SOUI_EXP SEventSet
     {
+        friend class SWindow;
     public:
         SEventSet(void);
         virtual ~SEventSet(void);
@@ -71,7 +80,7 @@ namespace SOUI
 
         \exception AlreadyExistsException    Thrown if an Event already exists named \a name.
         */
-        void    addEvent(const DWORD dwEventID);
+        void    addEvent(const DWORD dwEventID,LPCWSTR pszEventHandlerName);
 
 
         /*!
@@ -106,6 +115,9 @@ namespace SOUI
         */
         bool    isEventPresent(const DWORD dwEventID);
 
+        bool    setEventScriptHandler(const SStringW &  strEventName,const SStringA strScriptHandler);
+
+        SStringA getEventScriptHandler(const SStringW &  strEventName) const;
         /*!
         \brief
             Subscribes a handler to Event. .
@@ -118,9 +130,9 @@ namespace SOUI
 
         \return
         */
-        bool subscribeEvent(const DWORD dwEventID, const SlotFunctorBase & subscriber);
+        bool subscribeEvent(const DWORD dwEventID, const ISlotFunctor & subscriber);
 
-        bool unsubscribeEvent( const DWORD dwEventID, const SlotFunctorBase & subscriber );
+        bool unsubscribeEvent( const DWORD dwEventID, const ISlotFunctor & subscriber );
 
         void FireEvent(EventArgs& args);
 

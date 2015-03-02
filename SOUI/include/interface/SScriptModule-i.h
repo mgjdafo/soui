@@ -75,8 +75,7 @@ struct IScriptModule : public IObjRef
     /*!
     \brief
         Execute a scripted global 'event handler' function.  The function should take some kind of EventArgs like parameter
-        that the concrete implementation of this function can create from the passed EventArgs based object.  The function
-        should not return anything.
+        that the concrete implementation of this function can create from the passed EventArgs based object.  
 
     \param handler_name
         String object holding the name of the scripted handler function.
@@ -129,6 +128,11 @@ struct IScriptModule : public IObjRef
      */    
     virtual bool unsubscribeEvent(SWindow* target, UINT uEvent, LPCSTR subscriber_name ) = 0;
 
+};
+
+struct IScriptFactory : public IObjRef
+{
+    virtual HRESULT CreateScriptModule(IScriptModule ** ppScriptModule) = 0;
 };
 
 } // End of  SOUI namespace section

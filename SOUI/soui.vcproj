@@ -222,6 +222,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\helper\AppDir.cpp"
+				>
+			</File>
+			<File
 				RelativePath="src\helper\DragWnd.cpp"
 				>
 			</File>
@@ -366,6 +370,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\helper\SScriptTimer.cpp"
+				>
+			</File>
+			<File
 				RelativePath="src\control\SScrollbar.cpp"
 				>
 			</File>
@@ -461,6 +469,10 @@
 			>
 			<File
 				RelativePath="include\core\Accelerator.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\helper\AppDir.h"
 				>
 			</File>
 			<File
@@ -713,6 +725,10 @@
 			</File>
 			<File
 				RelativePath="include\interface\SScriptModule-i.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\helper\SScriptTimer.h"
 				>
 			</File>
 			<File

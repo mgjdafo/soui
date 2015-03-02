@@ -1,7 +1,7 @@
 ﻿<include>
   <tabctrl pos="0,0,-0,-0" tabAlign="left" tabSkin="skin_tab_left" tabInterSkin="skin_tab_left_splitter" tabInterSize="2" tabWidth="200" iconSkin="skin_small_icons" icon-x="5" icon-y="8">
     <page title="script" colorBorder="#ff0000" margin-x="1" margin-y="1">
-      <button name="btn_tstevt" pos="|-50,|-15,@100,@30" tip="click me to execute a lua script defined in lua\test.lua">script test</button>
+      <include src="layout:page_script"/>
     </page>
     <page title="drag drop">
       <edit name="edit_drop_top" pos="10,10,-10,]-10" cueText="draging a file to me to see what will happen"/>
@@ -51,6 +51,9 @@
       <calendar2 pos="2,2,205,201" name="mp_test" headerSkin="skin_btn_curve" titleSkin="skin_btn_curve" footerSkin="skin_btn_semiarc" daySkin="skin_png_radio_button" colorBorder="RGB(27,55,108)" footerHeight="30" preMonSkin="cal_arrow_left" nextMonSkin="cal_arrow_right"  prevYearSkin="cal_arrow_left" nextYearSkin="cal_arrow_right" sepMonYearSkin="skin_png_line_1px" MonYearSkin="skin_png_radio_button" bkgSkin="" headerTxtColor="#000000FF">
         <button name="btn_today" pos="-60,-25,-5,-0" skin="cal_btn_day" font="bold:1" >Today</button>
       </calendar2>
+    </page>
+    <page title="file resource">
+      <button name="btn_filewnd" pos="|0,|0,@150,@30" offset="-0.5,-0.5">从文件创建窗口</button>
     </page>
   </tabctrl>
 </include>

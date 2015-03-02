@@ -11,8 +11,10 @@
 #include "res.mgr/SObjDefAttr.h"
 
 #include "helper/STimerEx.h"
+#include "helper/SScriptTimer.h"
 #include "helper/mybuffer.h"
 #include "helper/SToolTip.h"
+#include "helper/AppDir.h"
 
 #include "control/SRichEdit.h"
 #include "control/Smessagebox.h"
@@ -57,20 +59,25 @@ public:
     }
 };
 
+//////////////////////////////////////////////////////////////////////////
+// SApplication
+
 template<> SApplication* SSingleton<SApplication>::ms_Singleton = 0;
 
 SApplication::SApplication(IRenderFactory *pRendFactory,HINSTANCE hInst,LPCTSTR pszHostClassName)
     :m_hInst(hInst)
     ,m_RenderFactory(pRendFactory)
-    ,m_pRealWndHandler(NULL)
 {
     SWndSurface::Init();
     _CreateSingletons();
-    CSimpleWndHelper::Init(hInst,pszHostClassName);
+    CSimpleWndHelper::Init(m_hInst,pszHostClassName);
     STextServiceHelper::Init();
     SRicheditMenuDef::Init();
     m_translator.Attach(new SNullTranslator);
     m_tooltipFactory.Attach(new SDefToolTipFactory);
+    
+    SAppDir appDir(hInst);
+    m_strAppDir = appDir.AppDir();
 }
 
 SApplication::~SApplication(void)
@@ -86,6 +93,7 @@ void SApplication::_CreateSingletons()
     new SThreadActiveWndMgr();
     new SWindowMgr();
     new STimer2();
+    new SScriptTimer();
     new SFontPool(m_RenderFactory);
     new SStringPool();
     new SNamedID();
@@ -102,6 +110,7 @@ void SApplication::_DestroySingletons()
     delete SNamedID::getSingletonPtr();
     delete SStringPool::getSingletonPtr();
     delete SFontPool::getSingletonPtr();
+    delete SScriptTimer::getSingletonPtr();
     delete STimer2::getSingletonPtr();
     delete SThreadActiveWndMgr::getSingletonPtr();
     delete SWindowMgr::getSingletonPtr();
@@ -128,6 +137,8 @@ BOOL SApplication::LoadXmlDocment( pugi::xml_document & xmlDoc,LPCTSTR pszXmlNam
 
 BOOL SApplication::Init( LPCTSTR pszName ,LPCTSTR pszType)
 {
+    SASSERT(m_RenderFactory);
+
     pugi::xml_document xmlDoc;
     if(!LOADXML(xmlDoc,pszName,pszType)) return FALSE;
     pugi::xml_node root=xmlDoc.child(L"UIDEF");
@@ -224,14 +235,16 @@ ITranslatorMgr * SApplication::GetTranslator()
 	return m_translator;
 }
 
-void SApplication::SetScriptModule(IScriptModule *pScriptModule)
+void SApplication::SetScriptFactory(IScriptFactory *pScriptFactory)
 {
-	m_pScriptModule = pScriptModule;
+	m_pScriptFactory = pScriptFactory;
 }
 
-IScriptModule * SApplication::GetScriptModule()
+
+HRESULT SApplication::CreateScriptModule( IScriptModule **ppScriptModule )
 {
-	return m_pScriptModule;
+    if(!m_pScriptFactory) return E_FAIL;
+    return m_pScriptFactory->CreateScriptModule(ppScriptModule);
 }
 
 IRenderFactory * SApplication::GetRenderFactory()
