@@ -29,3 +29,11 @@
 
 .svn*
 obj*
+bin*
+
+stdafx.h.cpp
+*.filters
+*.user
+*.vcxproj
+*.ncb
+*.aps

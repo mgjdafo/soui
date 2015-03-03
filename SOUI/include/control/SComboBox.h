@@ -114,6 +114,7 @@ class SOUI_EXP SComboBoxBase
     : public SWindow
     , public ISDropDownOwner
 {
+    SOUI_CLASS_NAME(SComboBoxBase,L"comboboxbase")
 public:
     
     /**
@@ -553,6 +554,7 @@ public:
      */
     void ResetContent()
     {
+        SetCurSel(-1);
         return m_pListBox->DeleteAll();
     }
 
