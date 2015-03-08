@@ -7,6 +7,7 @@
 #pragma comment(lib,"gdiplus")
 
 #include "imgdecoder-gdip.h"
+#include <interface/render-i.h>
 
 using namespace Gdiplus;
 
@@ -204,8 +205,7 @@ namespace SOUI
     //////////////////////////////////////////////////////////////////////////
     //  SImgDecoderFactory_PNG
 
-    SImgDecoderFactory_GDIP::SImgDecoderFactory_GDIP( BOOL bPremultiple )
-        :m_bPremultple(bPremultiple)
+    SImgDecoderFactory_GDIP::SImgDecoderFactory_GDIP( )
     {
         GdiplusStartupInput gdiplusStartupInput;
 
@@ -227,8 +227,68 @@ namespace SOUI
 
     BOOL SImgDecoderFactory_GDIP::CreateImgX( IImgX **ppImgDecoder )
     {
-        *ppImgDecoder = new SImgX_GDIP(m_bPremultple);
+        *ppImgDecoder = new SImgX_GDIP(TRUE);
         return TRUE;
+    }
+
+    CLSID FindCodecForFileType( REFGUID guidFileType, const Gdiplus::ImageCodecInfo* pCodecs, UINT nCodecs )
+    {
+        for( UINT iCodec = 0; iCodec < nCodecs; iCodec++ )
+        {
+            if( pCodecs[iCodec].FormatID == guidFileType )
+            {
+                return( pCodecs[iCodec].Clsid );
+            }
+        }
+
+        return( CLSID_NULL );
+    }
+
+    HRESULT SImgDecoderFactory_GDIP::SaveImage(IBitmap *pImg, LPCWSTR pszFileName,const LPVOID pFormat)
+    {
+        const GUID * pFmtID = (const GUID*)pFormat;
+        
+        UINT nEncoders;
+        UINT nBytes;
+        Gdiplus::Status status;
+
+        status = Gdiplus::GetImageEncodersSize( &nEncoders, &nBytes );
+        if( status != Gdiplus::Ok )
+        {
+            return( E_FAIL );
+        }
+
+        //USES_ATL_SAFE_ALLOCA;
+        Gdiplus::ImageCodecInfo* pEncoders = static_cast< Gdiplus::ImageCodecInfo* >( malloc(nBytes) );
+
+        if( pEncoders == NULL )
+            return E_OUTOFMEMORY;
+
+        status = Gdiplus::GetImageEncoders( nEncoders, nBytes, pEncoders );
+        if( status != Gdiplus::Ok )
+        {
+            free(pEncoders);
+            return( E_FAIL );
+        }
+
+        CLSID clsidEncoder = FindCodecForFileType( *pFmtID, pEncoders, nEncoders );
+        free(pEncoders);
+
+        if( clsidEncoder == CLSID_NULL )
+        {
+            return( E_FAIL );
+        }
+        
+        LPVOID pBits = pImg->LockPixelBits();
+        Bitmap bmp(pImg->Width(),pImg->Height(),pImg->Width()*4,PixelFormat32bppPARGB,(BYTE*)pBits);
+        pImg->UnlockPixelBits(pBits);
+        Image *gdipImg = &bmp;
+        return Ok == gdipImg->Save(pszFileName,&clsidEncoder)?S_OK:E_FAIL;
+    }
+
+    LPCWSTR SImgDecoderFactory_GDIP::GetDescription() const
+    {
+        return DESC_IMGDECODER;
     }
 
     //////////////////////////////////////////////////////////////////////////

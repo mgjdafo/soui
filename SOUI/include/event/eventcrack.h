@@ -13,9 +13,10 @@
 
 
 #define EVENT_MAP_BEGIN()                           \
+protected:                                          \
     virtual BOOL _HandleEvent(SOUI::EventArgs *pEvt)\
     {                                               \
-        UINT      uCode = pEvt->GetID();       \
+        UINT      uCode = pEvt->GetID();            \
 
 
 #define EVENT_MAP_DECLEAR()                         \
@@ -26,11 +27,11 @@ protected:                                          \
 #define EVENT_MAP_BEGIN2(classname)                 \
     BOOL classname::_HandleEvent(SOUI::EventArgs *pEvt)\
     {                                               \
-        UINT      uCode = pEvt->GetID();       \
+        UINT      uCode = pEvt->GetID();            \
  
 
 #define EVENT_MAP_END()                             \
-        return __super::_HandleEvent(pEvt);         \
+    return FALSE;                                   \
     }                                               \
  
 #define CHAIN_EVENT_MAP(ChainClass)                 \

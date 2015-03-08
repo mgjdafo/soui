@@ -60,19 +60,19 @@ namespace SOUI
         SImgFrame_GDIP  *    m_pImgArray;
     };
 
+    #define DESC_IMGDECODER L"gdi+"
     class SImgDecoderFactory_GDIP : public TObjRefImpl<IImgDecoderFactory>
     {
         friend class SImgX_GDIP;
     public:
-        SImgDecoderFactory_GDIP(BOOL bPremultiple=TRUE);
+        SImgDecoderFactory_GDIP();
         ~SImgDecoderFactory_GDIP();
 
-        virtual BOOL IsAlphaPremultiple(){return m_bPremultple;}
-        virtual void SetAlphaPremultiple(BOOL bPreMultiple){m_bPremultple=bPreMultiple;}
         virtual BOOL CreateImgX(IImgX **ppImgDecoder);
+        virtual HRESULT SaveImage(IBitmap *pImg, LPCWSTR pszFileName, const LPVOID pFormat);
+        virtual LPCWSTR GetDescription() const;
     protected:
     
-        BOOL    m_bPremultple;
         
         ULONG_PTR _gdiPlusToken;
     };

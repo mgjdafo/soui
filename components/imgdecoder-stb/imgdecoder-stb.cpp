@@ -118,8 +118,7 @@ namespace SOUI
     //////////////////////////////////////////////////////////////////////////
     //  SImgDecoderFactory_STB
 
-    SImgDecoderFactory_STB::SImgDecoderFactory_STB( BOOL bPremultiple/*=TRUE*/ )
-    :m_bPremultple(bPremultiple)
+    SImgDecoderFactory_STB::SImgDecoderFactory_STB( )
     {
     }
 
@@ -130,14 +129,15 @@ namespace SOUI
 
     BOOL SImgDecoderFactory_STB::CreateImgX( IImgX **ppImgDecoder )
     {
-        *ppImgDecoder = new SImgX_STB(m_bPremultple);
+        *ppImgDecoder = new SImgX_STB(TRUE);
         return TRUE;
     }
-
-    void SImgDecoderFactory_STB::SetAlphaPremultiple( BOOL bPreMultiple )
+    
+    LPCWSTR SImgDecoderFactory_STB::GetDescription() const
     {
-        m_bPremultple=bPreMultiple;
+        return DESC_IMGDECODER;
     }
+
     //////////////////////////////////////////////////////////////////////////
     BOOL IMGDECODOR_STB::SCreateInstance( IObjRef **pImgDecoderFactory )
     {

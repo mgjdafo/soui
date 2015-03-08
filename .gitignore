@@ -37,3 +37,4 @@ stdafx.h.cpp
 *.vcxproj
 *.ncb
 *.aps
+*.sbr
