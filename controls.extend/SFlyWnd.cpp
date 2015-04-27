@@ -15,7 +15,7 @@ namespace SOUI
     {
     }
 
-    const SwndLayout * SFlyWnd::GetLayout() const
+    SwndLayout * SFlyWnd::GetLayout()
     {
         if(m_bEndPos) return &m_endLayout;
         else return SWindow::GetLayout();

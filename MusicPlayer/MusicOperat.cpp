@@ -1,7 +1,7 @@
 /****************************************************************************
 *  功    能：音频文件操作类                                                 *
 *  添 加 人：小可                                                           *
-*  添加时间：2014.01.17 12：27                                              *
+*  添加时间：2015.01.17 12：27                                              *
 *  版本类型：初始版本                                                       *
 *  联系方式：QQ-1035144170                                                  *
 ****************************************************************************/
@@ -16,6 +16,10 @@ CMusicOpreat::CMusicOpreat(HWND m_PWnd)
 	hStream=NULL;     //播放流
 	m_pBassMusic=NULL;
 	m_pMainState=NULL;
+
+	//测试：
+	CLrcParse lrcPar;
+	lrcPar.ReadFile("");
 
 }
 
@@ -76,7 +80,7 @@ void CMusicOpreat::OnButPrev()         // 上一曲
 	m_pBassMusic->Stop(hStream);
 
 	nIndex--;
-	if (nIndex<=0)
+	if (nIndex<0)
 	{
 		nIndex=m_MusicManager.size()-1;
 	}
@@ -143,6 +147,7 @@ void CMusicOpreat::OnButPlayNext()     // 下一曲
 		int i=0;
 	}
 }
+
 void CMusicOpreat::OnStop()
 {
 	//自动切换下一首歌

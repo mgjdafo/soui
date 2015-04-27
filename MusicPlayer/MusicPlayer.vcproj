@@ -4,6 +4,7 @@
 	Version="9.00"
 	Name="MusicPlayer"
 	ProjectGUID="{E8EDDEC5-87FE-3E8E-910B-EF276746C028}"
+	RootNamespace="MusicPlayer"
 	Keyword="Qt4VSv1.0"
 	TargetFrameworkVersion="0"
 	>
@@ -236,6 +237,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LrcDowl.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\LrcParse.cpp"
+				>
+			</File>
+			<File
 				RelativePath="MainDlg.cpp"
 				>
 			</File>
@@ -248,7 +257,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\controls.extend\SFadeFrame.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\controls.extend\sflywnd.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SScrollLrc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\SScrollText.cpp"
 				>
 			</File>
 			<File
@@ -286,6 +307,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LrcDowl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LrcParse.h"
+				>
+			</File>
+			<File
 				RelativePath="Macro.h"
 				>
 			</File>
@@ -306,7 +335,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\controls.extend\SAnimator.h"
+				>
+			</File>
+			<File
+				RelativePath="..\controls.extend\SFadeFrame.h"
+				>
+			</File>
+			<File
 				RelativePath="..\controls.extend\sflywnd.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SScrollLrc.h"
 				>
 			</File>
 			<File
