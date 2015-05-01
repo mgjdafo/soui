@@ -10,7 +10,7 @@
       </caption>
       <window pos="5,29,-5,-5">
         <splitcol pos="0,0,-0,-0" sepsize="6">
-          <pane name="pane_project" idealsize="350" minsize="200" priority="2">
+          <pane name="pane_project" idealsize="350" minsize="200" priority="0">
             <window name="prj_toolbar" height="30" width="full">
               <!--项目工具栏-->
               <button name="prg_btn_open" width="100" height="full">打开项目</button>

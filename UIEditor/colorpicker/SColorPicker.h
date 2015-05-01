@@ -3,12 +3,12 @@
 
 namespace SOUI
 {
-    class EventColorChange : public TplEventArgs<EventColorChange>
+    class EventColorChange : public EventArgs
     {
-        SOUI_CLASS_NAME(EventColorChange,L"on_color_changed")
     public:
-        EventColorChange(SObject *pSender,COLORREF _crSel):TplEventArgs<EventColorChange>(pSender),crSel(_crSel){}
+        EventColorChange(SWindow *pWnd,COLORREF _crSel):EventArgs(pWnd),crSel(_crSel){}
         enum{EventID=EVT_EXTERNAL_BEGIN+100};
+        virtual UINT GetEventID(){return EventID;}
         COLORREF crSel;
     };
 

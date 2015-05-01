@@ -48,7 +48,7 @@ namespace SOUI
 
 	BOOL CSkinView_Base::SetImageFile( LPCTSTR pszFileName )
 	{
-		BOOL bOK= S_OK == m_img->LoadFromFile(pszFileName);
+		BOOL bOK= S_OK == m_img->LoadFromFile(pszFileName,NULL);
 		Invalidate();
 		return bOK;
 	}
