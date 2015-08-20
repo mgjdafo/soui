@@ -181,6 +181,20 @@ namespace SOUI
     void SRegion_GDI::CombineRect( LPCRECT lprect,int nCombineMode )
     {
         HRGN hRgn=::CreateRectRgnIndirect(lprect);
+        _CombineRgn(hRgn,nCombineMode);
+        DeleteObject(hRgn);
+    }
+
+    void SRegion_GDI::CombineRgn(const IRegion * pRgnSrc,int nCombineMode)
+    {
+        const SRegion_GDI *pRgnSrcGdi = (const SRegion_GDI*)pRgnSrc;
+        HRGN hRgn = pRgnSrcGdi->GetRegion();
+        _CombineRgn(hRgn,nCombineMode);
+    }
+
+
+    void SRegion_GDI::_CombineRgn(HRGN hRgn,int nCombineMode)
+    {
         if(nCombineMode == RGN_DIFF)
         {
             ::CombineRgn(m_hRgn,m_hRgn,hRgn,RGN_DIFF);
@@ -188,7 +202,7 @@ namespace SOUI
         {
             ::CombineRgn(m_hRgn,hRgn,m_hRgn,nCombineMode);
         }
-        DeleteObject(hRgn);
+
     }
 
     BOOL SRegion_GDI::PtInRegion( POINT pt )
@@ -225,7 +239,7 @@ namespace SOUI
         return m_hRgn;
     }
 
-    void SRegion_GDI::SetRegion( const HRGN  rgn )
+    void SRegion_GDI::SetRgn( const HRGN  rgn )
     {
         ::CombineRgn(m_hRgn,rgn,NULL,RGN_COPY);
     }
@@ -234,7 +248,7 @@ namespace SOUI
     {
         ::SetRectRgn(m_hRgn,0,0,0,0);
     }
-    
+
     //////////////////////////////////////////////////////////////////////////
     //  DCBuffer
     //////////////////////////////////////////////////////////////////////////
@@ -526,7 +540,7 @@ namespace SOUI
     {
         DCBuffer dcBuf(m_hdc,pRect,GetAValue(m_curPen->GetColor()));
         HGDIOBJ oldBr=::SelectObject(dcBuf,GetStockObject(NULL_BRUSH));
-        ::RoundRect(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom,pt.x,pt.y);
+        ::RoundRect(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom,pt.x*2,pt.y*2);
         ::SelectObject(dcBuf,oldBr);
         return S_OK;
     }
@@ -541,6 +555,15 @@ namespace SOUI
         ::RoundRect(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom,pt.x,pt.y);
         ::SelectObject(dcBuf,oldPen);
         return S_OK;
+    }
+
+    HRESULT SRenderTarget_GDI::FillSolidRoundRect(LPCRECT pRect,POINT pt,COLORREF cr)
+    {
+        DCBuffer dcBuf(m_hdc,pRect,GetAValue(cr),FALSE);
+        HBRUSH br=::CreateSolidBrush(cr&0x00ffffff);
+        ::RoundRect(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom,pt.x,pt.y);
+        ::DeleteObject(br);
+        return S_OK;    
     }
 
     HRESULT SRenderTarget_GDI::DrawLines(LPPOINT pPt,size_t nCount)
@@ -893,7 +916,16 @@ namespace SOUI
         ::Ellipse(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom);
         return S_OK;
     }
-    
+
+    HRESULT SRenderTarget_GDI::FillSolidEllipse(LPCRECT pRect,COLORREF cr)
+    {
+        DCBuffer dcBuf(m_hdc,pRect,GetAValue(cr),FALSE);
+        HBRUSH br=::CreateSolidBrush(cr&0x00ffffff);
+        ::Ellipse(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom);
+        ::DeleteObject(br);
+        return S_OK;    
+    }
+
     const float PI = 3.1415926f;
 
     HRESULT SRenderTarget_GDI::DrawArc( LPCRECT pRect,float startAngle,float sweepAngle,bool useCenter )

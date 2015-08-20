@@ -49,12 +49,14 @@ HEADERS += MainDlg.h \
            ../controls.extend/sscrolltext.h \
            ../controls.extend/scalendar2.h \
            ../controls.extend/slistctrlex.h \
+           ../controls.extend/simagemaskwnd.h \
            httpsvr/filereader-i.h \
            httpsvr/genericserver.h \
            httpsvr/httpserver.h \
            memflash.h \
 		   uianimation/uianimation.h \
-		   uianimation/uianimationwnd.h
+		   uianimation/uianimationwnd.h\
+		   appledock/sdesktopdock.h
 		   
 SOURCES += demo.cpp \
            MainDlg.cpp \
@@ -82,10 +84,12 @@ SOURCES += demo.cpp \
            ../controls.extend/sscrolltext.cpp \
            ../controls.extend/scalendar2.cpp \
            ../controls.extend/slistctrlex.cpp \
+           ../controls.extend/simagemaskwnd.cpp \
            httpsvr/genericserver.cpp \
            httpsvr/httpserver.cpp \
            memflash.cpp	\
-		   uianimation/uianimationwnd.cpp
-
+		   uianimation/uianimationwnd.cpp \
+			appledock/sdesktopdock.cpp
+			
 RC_FILE += demo.rc
 

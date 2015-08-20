@@ -199,6 +199,8 @@ namespace SOUI
         virtual ~SRegion_Skia();
 
 		virtual void CombineRect(LPCRECT lprect,int nCombineMode);
+        virtual void CombineRgn(const IRegion * pRgnSrc,int nCombineMode );
+        virtual void SetRgn(const HRGN hRgn);
 		virtual BOOL PtInRegion(POINT pt);
 		virtual BOOL RectInRegion(LPCRECT lprect);
 		virtual void GetRgnBox(LPRECT lprect);
@@ -264,12 +266,15 @@ namespace SOUI
 
         virtual HRESULT DrawEllipse(LPCRECT pRect);
         virtual HRESULT FillEllipse(LPCRECT pRect);
+        virtual HRESULT FillSolidEllipse(LPCRECT pRect,COLORREF cr);
 
         virtual HRESULT DrawArc(LPCRECT pRect,float startAngle,float sweepAngle,bool useCenter);
         virtual HRESULT FillArc(LPCRECT pRect,float startAngle,float sweepAngle);
 
         virtual HRESULT DrawRoundRect(LPCRECT pRect,POINT pt);
         virtual HRESULT FillRoundRect(LPCRECT pRect,POINT pt);
+        virtual HRESULT FillSolidRoundRect(LPCRECT pRect,POINT pt,COLORREF cr);
+
         virtual HRESULT DrawLines(LPPOINT pPt,size_t nCount);
         virtual HRESULT GradientFill(LPCRECT pRect,BOOL bVert,COLORREF crBegin,COLORREF crEnd,BYTE byAlpha=0xFF);
         virtual HRESULT GradientFillEx( LPCRECT pRect,const POINT* pts,COLORREF *colors,float *pos,int nCount,BYTE byAlpha=0xFF );

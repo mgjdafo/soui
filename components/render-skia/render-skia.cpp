@@ -15,7 +15,7 @@
 #include "skia2rop2.h"
 
 #define getTotalClip internal_private_getTotalClip
-
+// #include <vld.h>
 
 namespace SOUI
 {
@@ -121,6 +121,8 @@ namespace SOUI
         ,m_uGetDCFlag(0)
 	{
         m_ptOrg.fX=m_ptOrg.fY=0.0f;
+        
+        m_SkCanvas = new SkCanvas();
 
         CreatePen(PS_SOLID,SColor(0,0,0).toCOLORREF(),1,&m_defPen);
         SelectObject(m_defPen);
@@ -141,7 +143,7 @@ namespace SOUI
 		CreatePen(PS_SOLID,SColor(0,0,0).toCOLORREF(),1,&pPen);
 		SelectObject(pPen);
         
-        m_SkCanvas = new SkCanvas(m_curBmp->GetSkBitmap());
+//        m_SkCanvas = new SkCanvas(m_curBmp->GetSkBitmap());
 	}
 	
 	SRenderTarget_Skia::~SRenderTarget_Skia()
@@ -434,6 +436,24 @@ namespace SOUI
         m_SkCanvas->drawRoundRect(skrc,(SkScalar)pt.x,(SkScalar)pt.y,paint);
         return S_OK;
     }
+    
+    HRESULT SRenderTarget_Skia::FillSolidRoundRect(LPCRECT pRect,POINT pt,COLORREF cr)
+    {
+        SkPaint paint;
+        paint.setAntiAlias(true);
+
+        paint.setFilterBitmap(false);
+        paint.setColor(SColor(cr).toARGB());
+        paint.setStyle(SkPaint::kFill_Style);
+
+        SkRect skrc=toSkRect(pRect);
+        InflateSkRect(&skrc,-0.5f,-0.5f);//要缩小0.5显示效果才和GDI一致。
+        skrc.offset(m_ptOrg);
+
+        m_SkCanvas->drawRoundRect(skrc,(SkScalar)pt.x,(SkScalar)pt.y,paint);
+        return S_OK;
+    }
+
 
     HRESULT SRenderTarget_Skia::DrawLines(LPPOINT pPt,size_t nCount)
     {
@@ -536,10 +556,21 @@ namespace SOUI
             m_SkCanvas->drawBitmapRectToRect(bmp,&rcSrc,rcDest,&paint);
         }else
         {
-            SkBitmap bmpSub;
-            bmp.extractSubset(&bmpSub,toSkIRect(pRcSrc));
-            paint.setShader(SkShader::CreateBitmapShader(bmpSub,SkShader::kRepeat_TileMode,SkShader::kRepeat_TileMode))->unref();
-            m_SkCanvas->drawRect(rcDest,paint);
+            PushClipRect(pRcDest,RGN_AND);
+            
+            SkIRect rcSrc = toSkIRect(pRcSrc);
+            SkRect rcSubDest={0.0f,0.0f,(float)rcSrc.width(),(float)rcSrc.height()};
+            for(float y=rcDest.fTop;y<rcDest.fBottom;y+=rcSrc.height())
+            {
+                rcSubDest.offsetTo(rcDest.fLeft,y);               
+                for(float x=rcDest.fLeft;x<rcDest.fRight;x += rcSrc.width())
+                {
+                    m_SkCanvas->drawBitmapRect(bmp,&rcSrc,rcSubDest,&paint);
+                    rcSubDest.offset((float)rcSrc.width(),0.0f);
+                }
+            }
+            
+            PopClip();
         }
         return S_OK;
 
@@ -665,6 +696,10 @@ namespace SOUI
         case OT_BITMAP: 
             pRet=m_curBmp;
             m_curBmp=(SBitmap_Skia*)pObj;
+            //重新生成clip
+            SASSERT(m_SkCanvas);
+            delete m_SkCanvas;
+            m_SkCanvas = new SkCanvas(m_curBmp->GetSkBitmap());
             break;
         case OT_PEN:
             pRet=m_curPen;
@@ -905,6 +940,19 @@ namespace SOUI
         return S_OK;
     }
 
+    HRESULT SRenderTarget_Skia::FillSolidEllipse(LPCRECT pRect,COLORREF cr)
+    {
+        SkPaint paint;
+        paint.setFilterBitmap(false);
+        paint.setColor(SColor(cr).toARGB());
+        paint.setStyle(SkPaint::kFill_Style);
+
+        SkRect skrc=toSkRect(pRect);
+        skrc.offset(m_ptOrg);
+        m_SkCanvas->drawOval(skrc,paint);
+        return S_OK;
+    }
+
     HRESULT SRenderTarget_Skia::DrawArc( LPCRECT pRect,float startAngle,float sweepAngle,bool useCenter )
     {
         SkPaint paint;
@@ -1106,6 +1154,31 @@ namespace SOUI
         m_rgn.op(toSkIRect(lprect),RGNMODE2SkRgnOP(nCombineMode));
 	}
 
+    void SRegion_Skia::CombineRgn(const IRegion * pRgnSrc,int nCombineMode)
+    {
+        const SRegion_Skia * pRgnSrc2 = (const SRegion_Skia*)pRgnSrc;
+        m_rgn.op(pRgnSrc2->GetRegion(),RGNMODE2SkRgnOP(nCombineMode));
+    }
+
+    void SRegion_Skia::SetRgn(const HRGN hRgn)
+    {
+        DWORD dwSize = GetRegionData(hRgn,0,NULL);
+        RGNDATA *pData = (RGNDATA*)malloc(dwSize);
+        GetRegionData(hRgn,dwSize,pData);
+        SkIRect *pRcs= new SkIRect[pData->rdh.nCount];
+        LPRECT pRcsSrc = (LPRECT)pData->Buffer;
+        for(int i = 0 ;i< pData->rdh.nCount;i++)
+        {
+            pRcs[i].fLeft = pRcsSrc[i].left;
+            pRcs[i].fTop = pRcsSrc[i].top;
+            pRcs[i].fRight = pRcsSrc[i].right;
+            pRcs[i].fBottom = pRcsSrc[i].bottom;
+        }
+        m_rgn.setRects(pRcs,pData->rdh.nCount);
+        free(pData);
+        delete []pRcs;
+    }
+    
 	BOOL SRegion_Skia::PtInRegion( POINT pt )
 	{
         return m_rgn.contains(pt.x,pt.y);
@@ -1166,6 +1239,7 @@ namespace SOUI
     {
         m_rgn.setEmpty();
     }
+
 
     //////////////////////////////////////////////////////////////////////////
     // SFont_Skia

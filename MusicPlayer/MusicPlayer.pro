@@ -35,23 +35,33 @@ HEADERS += MainDlg.h \
 			DropEx.h \
 			Macro.h \
 			MusicOperat.h \
+			lrcdowl.h \
+			lrcParse.h \
+			SScrollLrc.h \
            ../controls.extend/STurn3DView.h \
            ../controls.extend/image3d/3dlib.h \
            ../controls.extend/image3d/3dmatrix.h \
            ../controls.extend/image3d/3dTransform.h \
            ../controls.extend/image3d/PerspectiveTransform.h \
 		   ../controls.extend/trayicon/SShellNotifyIcon.h \
-		   ../controls.extend/sflywnd.h
-
+		   ../controls.extend/sflywnd.h \
+		   ../controls.extend/sfadeframe.h \
+		   ../controls.extend/sscrolltext.h
+		   
 SOURCES += MainDlg.cpp \
            BassMusic.cpp \
 		   MusicPlayer.cpp \
 		   MusicOperat.cpp \
+		   lrcdowl.cpp \
+		   lrcParse.cpp \
+		   SScrollLrc.cpp \
            ../controls.extend/STurn3DView.cpp \
            ../controls.extend/image3d/3dlib.cpp \
            ../controls.extend/image3d/3dmatrix.cpp \
            ../controls.extend/image3d/3dtransform.cpp \
  		   ../controls.extend/trayicon/SShellNotifyIcon.cpp \
-		   ../controls.extend/sflywnd.cpp
+		   ../controls.extend/sflywnd.cpp \
+		   ../controls.extend/sfadeframe.cpp \
+		   ../controls.extend/sscrolltext.cpp
           
 RC_FILE += musicplayer.rc

@@ -16,7 +16,7 @@ namespace SOUI
     void SCaptureButton::OnLButtonDown( UINT nFlags, CPoint point )
     {
         SWindow::OnLButtonDown(nFlags,point);
-        HCURSOR hCursor=GETRESPROVIDER->LoadCursor(MAKEINTRESOURCE(IDC_HELP));
+        HCURSOR hCursor=GETRESPROVIDER->LoadCursor(_T("target"));
         ::SetCursor(hCursor);
     }
 
@@ -39,7 +39,7 @@ namespace SOUI
     void SCaptureButton::OnPaint( IRenderTarget *pRT )
     {
         if(!m_pBgSkin) return;
-        m_pBgSkin->Draw(pRT,m_rcWindow,IsChecked()?1:0);
+        m_pBgSkin->Draw(pRT,GetWindowRect(),IsChecked()?1:0);
     }
 
     CSize SCaptureButton::GetDesiredSize( LPCRECT pRcContainer )

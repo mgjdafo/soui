@@ -58,7 +58,7 @@ namespace SOUI
 
     void SChromeTab::MoveTo( const CRect & rcEnd )
     {
-        m_rcBegin = m_rcWindow;
+        m_rcBegin = GetWindowRect();
         m_rcEnd = rcEnd;
         Stop();
         Start(200);
@@ -127,6 +127,7 @@ namespace SOUI
     ,m_bEnableDrag(TRUE)
     ,m_pBtnNew(NULL)
     {
+        m_bClipClient=TRUE;
         m_evtSet.addEvent(EVENTID(EventChromeTabNew));
         m_evtSet.addEvent(EVENTID(EventChromeTabClose));
         m_evtSet.addEvent(EVENTID(EventChromeTabSelChanged));
@@ -486,7 +487,7 @@ namespace SOUI
 
     int SChromeTabCtrl::GetTabOrder( int iTabIndex ) const
     {
-        for(int i= 0;i<m_lstTabOrder.GetCount();i++)
+        for(int i= 0;i<(int)m_lstTabOrder.GetCount();i++)
         {
             if(m_lstTabOrder[i]->m_iTabIndex == iTabIndex) return i;
         }

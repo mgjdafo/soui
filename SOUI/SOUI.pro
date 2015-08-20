@@ -41,7 +41,9 @@ HEADERS += include/SApp.h \
            include/control/SCalendar.h \
            include/control/SCaption.h \
            include/control/SCmnCtrl.h \
+           include/control/SComboBase.h \
            include/control/SComboBox.h \
+           include/control/SComboView.h \
            include/control/SDropDown.h \
            include/control/SHeaderCtrl.h \
            include/control/SHotKeyCtrl.h \
@@ -60,6 +62,7 @@ HEADERS += include/SApp.h \
            include/control/stree.hpp \
            include/control/STreeBox.h \
            include/control/STreeCtrl.h \
+           include/control/SListView.h \
            include/core/Accelerator.h \
            include/core/FocusManager.h \
            include/core/SDefine.h \
@@ -76,7 +79,6 @@ HEADERS += include/SApp.h \
            include/core/SSkinObjBase.h \
            include/core/SSkin.h \
            include/core/SSkinFactoryMgr.h \
-           include/core/SThreadActiveWndMgr.h \
            include/core/SWindowMgr.h \
            include/core/Swnd.h \
            include/core/SwndContainer-i.h \
@@ -85,6 +87,7 @@ HEADERS += include/SApp.h \
            include/core/SwndLayout.h \
            include/core/SwndLayoutBuilder.h \
            include/core/SwndStyle.h \
+           include/core/scaret.h \
            include/event/eventcrack.h \
            include/event/Events.h \
            include/event/EventSet.h \
@@ -136,7 +139,9 @@ SOURCES += src/SApp.cpp \
            src/control/SCalendar.cpp \
            src/control/SCaption.cpp \
            src/control/SCmnCtrl.cpp \
+           src/control/SComboBase.cpp \
            src/control/SComboBox.cpp \
+           src/control/SComboView.cpp \
            src/control/SDropDown.cpp \
            src/control/SHeaderCtrl.cpp \
            src/control/SHotKeyCtrl.cpp \
@@ -152,6 +157,7 @@ SOURCES += src/SApp.cpp \
            src/control/STabCtrl.cpp \
            src/control/STreeBox.cpp \
            src/control/STreeCtrl.cpp \
+           src/control/SListView.cpp \
            src/core/Accelerator.cpp \
            src/core/FocusManager.cpp \
            src/core/SDropTargetDispatcher.cpp \
@@ -164,7 +170,6 @@ SOURCES += src/SApp.cpp \
            src/core/SPanel.cpp \
            src/core/SSkin.cpp \
            src/core/SSkinFactoryMgr.cpp \
-           src/core/SThreadActiveWndMgr.cpp \
            src/core/SWindowMgr.cpp \
            src/core/Swnd.cpp \
            src/core/SwndContainerImpl.cpp \
@@ -172,6 +177,7 @@ SOURCES += src/SApp.cpp \
            src/core/SwndLayout.cpp \
            src/core/SwndLayoutBuilder.cpp \
            src/core/SwndStyle.cpp \
+           src/core/scaret.cpp \
            src/event/EventSet.cpp \
            src/helper/DragWnd.cpp \
            src/helper/MemDC.cpp \
