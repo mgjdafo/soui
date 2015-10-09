@@ -63,6 +63,7 @@ HEADERS += include/SApp.h \
            include/control/STreeBox.h \
            include/control/STreeCtrl.h \
            include/control/SListView.h \
+           include/control/SMcListView.h \
            include/core/Accelerator.h \
            include/core/FocusManager.h \
            include/core/SDefine.h \
@@ -111,6 +112,8 @@ HEADERS += include/SApp.h \
            include/helper/SwndMsgCracker.h \
            include/helper/SCriticalSection.h \
 		   include/helper/AppDir.h \
+		   include/helper/SAdapterBase.h \
+		   include/helper/SListViewItemLocator.h \
            include/interface/imgdecoder-i.h \
            include/interface/render-i.h \
            include/interface/SResProvider-i.h \
@@ -118,6 +121,8 @@ HEADERS += include/SApp.h \
            include/interface/SSkinobj-i.h \
            include/interface/STranslator-i.h \
            include/interface/stooltip-i.h \
+           include/interface/adapter-i.h \
+           include/interface/LvItemLocator-i.h \
            include/res.mgr/SFontPool.h \
            include/res.mgr/SObjDefAttr.h \
            include/res.mgr/SResProvider.h \
@@ -158,6 +163,7 @@ SOURCES += src/SApp.cpp \
            src/control/STreeBox.cpp \
            src/control/STreeCtrl.cpp \
            src/control/SListView.cpp \
+           src/control/SMcListView.cpp \
            src/core/Accelerator.cpp \
            src/core/FocusManager.cpp \
            src/core/SDropTargetDispatcher.cpp \
@@ -187,6 +193,7 @@ SOURCES += src/SApp.cpp \
            src/helper/SScriptTimer.cpp \
            src/helper/stooltip.cpp \
 		   src/helper/AppDir.cpp \
+		   src/helper/SListViewItemLocator.cpp \
            src/res.mgr/SFontPool.cpp \
            src/res.mgr/SObjDefAttr.cpp \
            src/res.mgr/SResProvider.cpp \
