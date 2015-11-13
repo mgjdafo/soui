@@ -38,7 +38,6 @@ namespace SOUI
         ,m_iFirstVisible(-1)
         ,m_pHoverItem(NULL)
         ,m_itemCapture(NULL)
-        ,m_bScrollUpdate(TRUE)
         ,m_pSkinDivider(NULL)
         ,m_nDividerSize(0)
         ,m_bWantTab(FALSE)
@@ -210,13 +209,8 @@ namespace SOUI
             UpdateVisibleItems();
 
             //加速滚动时UI的刷新
-            static DWORD dwTime1=0;
-            DWORD dwTime=GetTickCount();
-            if(dwTime-dwTime1>=m_dwUpdateInterval && m_bScrollUpdate)
-            {
-                UpdateWindow();
-                dwTime1=dwTime;
-            }
+            if (uCode==SB_THUMBTRACK)
+                ScrollUpdate();
 
         }
         return TRUE;
@@ -249,55 +243,51 @@ namespace SOUI
         {
             while(pos < m_siVer.nPos + (int)m_siVer.nPage && iNewLastVisible < m_adapter->getCount())
             {
+                ItemInfo ii={NULL,-1};
                 if(iNewLastVisible>=iOldFirstVisible && iNewLastVisible < iOldLastVisible)
                 {//use the old visible item
                     int iItem = iNewLastVisible-iOldFirstVisible;//(iNewLastVisible-iNewFirstVisible) + (iNewFirstVisible-iOldFirstVisible);
                     SASSERT(iItem>=0 && iItem <= (iOldLastVisible-iOldFirstVisible));
-                    m_lstItems.AddTail(pItemInfos[iItem]);
-                    pos += m_lvItemLocator->GetItemHeight(iNewLastVisible)+m_lvItemLocator->GetDividerSize();
+                    ii = pItemInfos[iItem];
                     pItemInfos[iItem].pItem = NULL;//标记该行已经被重用
                 }else
                 {//create new visible item
-                    int nItemType = m_adapter->getItemViewType(iNewLastVisible);
-                    SList<SItemPanel *> *lstRecycle = m_itemRecycle.GetAt(nItemType);
-
-                    SItemPanel * pItemPanel = NULL;
+                    ii.nType = m_adapter->getItemViewType(iNewLastVisible);
+                    SList<SItemPanel *> *lstRecycle = m_itemRecycle.GetAt(ii.nType);
                     if(lstRecycle->IsEmpty())
                     {//创建一个新的列表项
-                        pItemPanel = SItemPanel::Create(this,pugi::xml_node(),this);
+                        ii.pItem = SItemPanel::Create(this,pugi::xml_node(),this);
                     }else
                     {
-                        pItemPanel = lstRecycle->RemoveHead();
+                        ii.pItem = lstRecycle->RemoveHead();
                     }
-                    pItemPanel->SetItemIndex(iNewLastVisible);
-
-                    CRect rcItem = GetClientRect();
-                    rcItem.MoveToXY(0,0);
-                    if(m_lvItemLocator->IsFixHeight())
-                    {
-                        rcItem.bottom=m_lvItemLocator->GetItemHeight(iNewLastVisible);
-                        pItemPanel->Move(rcItem);
-                    }
-                    m_adapter->getView(iNewLastVisible,pItemPanel,m_xmlTemplate.first_child());
-                    if(!m_lvItemLocator->IsFixHeight())
-                    {
-                        rcItem.bottom=0;
-                        CSize szItem = pItemPanel->GetDesiredSize(rcItem);
-                        rcItem.bottom = rcItem.top + szItem.cy;
-                        pItemPanel->Move(rcItem);
-                        m_lvItemLocator->SetItemHeight(iNewLastVisible,szItem.cy);
-                    }                
-                    pItemPanel->UpdateChildrenPosition();
-                    if(iNewLastVisible == m_iSelItem)
-                    {
-                        pItemPanel->ModifyItemState(WndState_Check,0);
-                    }
-                    ItemInfo ii;
-                    ii.nType = nItemType;
-                    ii.pItem = pItemPanel;
-                    m_lstItems.AddTail(ii);
-                    pos += rcItem.bottom + m_lvItemLocator->GetDividerSize();
+                    ii.pItem->SetItemIndex(iNewLastVisible);
                 }
+                CRect rcItem = GetClientRect();
+                rcItem.MoveToXY(0,0);
+                if(m_lvItemLocator->IsFixHeight())
+                {
+                    rcItem.bottom=m_lvItemLocator->GetItemHeight(iNewLastVisible);
+                    ii.pItem->Move(rcItem);
+                }
+                m_adapter->getView(iNewLastVisible,ii.pItem,m_xmlTemplate.first_child());
+                if(!m_lvItemLocator->IsFixHeight())
+                {
+                    rcItem.bottom=0;
+                    CSize szItem = ii.pItem->GetDesiredSize(rcItem);
+                    rcItem.bottom = rcItem.top + szItem.cy;
+                    ii.pItem->Move(rcItem);
+                    m_lvItemLocator->SetItemHeight(iNewLastVisible,szItem.cy);
+                }                
+                ii.pItem->UpdateLayout();
+                if(iNewLastVisible == m_iSelItem)
+                {
+                    ii.pItem->ModifyItemState(WndState_Check,0);
+                }
+                
+                m_lstItems.AddTail(ii);
+                pos += rcItem.bottom + m_lvItemLocator->GetDividerSize();
+
                 iNewLastVisible ++;
             }
         }
@@ -552,26 +542,41 @@ namespace SOUI
             return;
         }
 
-        m_bScrollUpdate=FALSE;
         if (nChar == VK_DOWN && m_iSelItem < m_adapter->getCount() - 1)
             nNewSelItem = m_iSelItem+1;
         else if (nChar == VK_UP && m_iSelItem > 0)
             nNewSelItem = m_iSelItem-1;
         else if (pOwner && nChar == VK_RETURN)//提供combobox响应回车选中
             nNewSelItem = m_iSelItem;
-        else if(nChar == VK_PRIOR)
+        else
         {
-            OnScroll(TRUE,SB_PAGEUP,0);
-            if(!m_lstItems.IsEmpty())
+            switch(nChar)
             {
-                nNewSelItem = m_lstItems.GetHead().pItem->GetItemIndex();
+            case VK_PRIOR:
+                OnScroll(TRUE,SB_PAGEUP,0);
+                break;
+            case VK_NEXT:
+                OnScroll(TRUE,SB_PAGEDOWN,0);
+                break;
+            case VK_HOME:
+                OnScroll(TRUE,SB_TOP,0);
+                break;
+            case VK_END:
+                OnScroll(TRUE,SB_BOTTOM,0);
+                break;
             }
-        }else if(nChar == VK_NEXT)
-        {
-            OnScroll(TRUE,SB_PAGEDOWN,0);
-            if(!m_lstItems.IsEmpty())
+            if(nChar == VK_PRIOR || nChar == VK_HOME)
             {
-                nNewSelItem = m_lstItems.GetTail().pItem->GetItemIndex();
+                if(!m_lstItems.IsEmpty())
+                {
+                    nNewSelItem = m_lstItems.GetHead().pItem->GetItemIndex();
+                }
+            }else if(nChar == VK_NEXT || nChar == VK_END)
+            {
+                if(!m_lstItems.IsEmpty())
+                {
+                    nNewSelItem = m_lstItems.GetTail().pItem->GetItemIndex();
+                }
             }
         }
 
@@ -579,7 +584,6 @@ namespace SOUI
         {
             EnsureVisible(nNewSelItem);
             SetSel(nNewSelItem);
-            m_bScrollUpdate=TRUE;
         }
     }
 
