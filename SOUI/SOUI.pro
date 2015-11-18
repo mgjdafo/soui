@@ -64,6 +64,7 @@ HEADERS += include/SApp.h \
            include/control/STreeCtrl.h \
            include/control/SListView.h \
            include/control/SMcListView.h \
+           include/control/SSpinButtonCtrl.h \
            include/core/Accelerator.h \
            include/core/FocusManager.h \
            include/core/SDefine.h \
@@ -113,6 +114,7 @@ HEADERS += include/SApp.h \
            include/helper/SCriticalSection.h \
 		   include/helper/AppDir.h \
 		   include/helper/SAdapterBase.h \
+		   include/helper/SwndFinder.h \
 		   include/helper/SListViewItemLocator.h \
            include/interface/imgdecoder-i.h \
            include/interface/render-i.h \
@@ -164,6 +166,7 @@ SOURCES += src/SApp.cpp \
            src/control/STreeCtrl.cpp \
            src/control/SListView.cpp \
            src/control/SMcListView.cpp \
+           src/control/SSpinButtonCtrl.cpp \
            src/core/Accelerator.cpp \
            src/core/FocusManager.cpp \
            src/core/SDropTargetDispatcher.cpp \
@@ -194,6 +197,7 @@ SOURCES += src/SApp.cpp \
            src/helper/stooltip.cpp \
 		   src/helper/AppDir.cpp \
 		   src/helper/SListViewItemLocator.cpp \
+   		   src/helper/SwndFinder.cpp \
            src/res.mgr/SFontPool.cpp \
            src/res.mgr/SObjDefAttr.cpp \
            src/res.mgr/SResProvider.cpp \

@@ -415,6 +415,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\control\SSpinButtonCtrl.cpp"
+				>
+			</File>
+			<File
 				RelativePath="src\control\SSplitWnd.cpp"
 				>
 			</File>
@@ -464,6 +468,10 @@
 			</File>
 			<File
 				RelativePath="src\core\SWndFactoryMgr.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\helper\SwndFinder.cpp"
 				>
 			</File>
 			<File
@@ -821,6 +829,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\control\SSpinButtonCtrl.h"
+				>
+			</File>
+			<File
 				RelativePath="include\control\SSplitWnd.h"
 				>
 			</File>
@@ -890,6 +902,10 @@
 			</File>
 			<File
 				RelativePath="include\core\SwndFactoryMgr.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\helper\SwndFinder.h"
 				>
 			</File>
 			<File
