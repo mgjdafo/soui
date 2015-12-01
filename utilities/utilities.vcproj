@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9,00"
 	Name="utilities"
-	ProjectGUID="{C2B034F6-3E66-3632-8CBF-452C2E6C9BA9}"
+	ProjectGUID="{711FD1E7-C06C-3BA5-83D3-35F9A8C4025D}"
 	Keyword="Qt4VSv1.0">
 	<Platforms>
 		<Platform
@@ -14,14 +14,14 @@
 			Name="Debug|Win32"
 			OutputDirectory="..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="2"
 			IntermediateDirectory="..\obj\debug\utilities\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;include&quot;,&quot;..\config&quot;,..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\obj\debug\utilities\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -32,9 +32,9 @@
 				Optimization ="4"
 				PrecompiledHeaderFile="$(IntDir)\utilitiesd.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,UTILITIES_EXPORTS"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,UTILITIES_EXPORTS"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -68,20 +68,20 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,UTILITIES_EXPORTS,_DEBUG" />
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,UTILITIES_EXPORTS,_DEBUG" />
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="2"
 			IntermediateDirectory="..\obj\release\utilities\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;include&quot;,&quot;..\config&quot;,..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\obj\release\utilities\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -92,9 +92,9 @@
 				Optimization ="1"
 				PrecompiledHeaderFile="$(IntDir)\utilities.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,UTILITIES_EXPORTS,NDEBUG"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,UTILITIES_EXPORTS,NDEBUG"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -105,12 +105,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalLibraryDirectories="..\bin"
-				EnableCOMDATFolding="2"
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="false"
 				IgnoreImportLibrary="true"
 				LinkIncremental="1"
 				LinkTimeCodeGeneration="0"
-				OptimizeReferences="2"
 				OutputFile="$(OutDir)\utilities.dll"
 				ProgramDatabaseFile=""
 				SubSystem="0"
@@ -131,7 +129,7 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,UTILITIES_EXPORTS" />
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,UTILITIES_EXPORTS" />
 		</Configuration>
 	</Configurations>
 	<Files>

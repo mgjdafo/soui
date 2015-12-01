@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9,00"
 	Name="zlib"
-	ProjectGUID="{E74072F9-4383-3B0F-A789-9ADD4E407BF8}"
+	ProjectGUID="{3FE5B8CE-E01A-3105-8F15-06308F5DD4B6}"
 	Keyword="Qt4VSv1.0">
 	<Platforms>
 		<Platform
@@ -14,14 +14,14 @@
 			Name="Debug|Win32"
 			OutputDirectory="..\..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="4"
 			IntermediateDirectory="..\..\obj\debug\zlib\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\..\config&quot;,..\..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\..\obj\debug\zlib\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -29,9 +29,9 @@
 				GeneratePreprocessedFile="0"
 				ObjectFile="..\..\obj\debug\zlib\"
 				Optimization ="4"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_CRT_SECURE_NO_WARNINGS"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -57,21 +57,21 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_CRT_SECURE_NO_WARNINGS,_DEBUG"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_CRT_SECURE_NO_WARNINGS,_DEBUG"
 				ResourceOutputFileName="$(OutDir)\$(InputName).res" />
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="4"
 			IntermediateDirectory="..\..\obj\release\zlib\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\..\config&quot;,..\..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\..\obj\release\zlib\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -79,9 +79,9 @@
 				GeneratePreprocessedFile="0"
 				ObjectFile="..\..\obj\release\zlib\"
 				Optimization ="1"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_CRT_SECURE_NO_WARNINGS,NDEBUG"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_CRT_SECURE_NO_WARNINGS,NDEBUG"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -107,7 +107,7 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_CRT_SECURE_NO_WARNINGS"
 				ResourceOutputFileName="$(OutDir)\$(InputName).res" />
 		</Configuration>
 	</Configurations>

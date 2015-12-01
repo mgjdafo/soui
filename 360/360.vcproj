@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9,00"
 	Name="360"
-	ProjectGUID="{73C5F9C9-1F07-397E-B929-898B92AAC27B}"
+	ProjectGUID="{B483D131-B127-3AA8-A927-C0D37C813D74}"
 	Keyword="Qt4VSv1.0">
 	<Platforms>
 		<Platform
@@ -14,14 +14,14 @@
 			Name="Debug|Win32"
 			OutputDirectory="..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="1"
 			IntermediateDirectory="..\obj\debug\360\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\utilities\include&quot;,&quot;..\soui\include&quot;,&quot;..\components&quot;,&quot;..\config&quot;,..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\obj\debug\360\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -32,9 +32,9 @@
 				Optimization ="4"
 				PrecompiledHeaderFile="$(IntDir)\360d.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -70,20 +70,20 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_DEBUG" />
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_DEBUG" />
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="1"
 			IntermediateDirectory="..\obj\release\360\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\utilities\include&quot;,&quot;..\soui\include&quot;,&quot;..\components&quot;,&quot;..\config&quot;,..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\obj\release\360\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -94,9 +94,9 @@
 				Optimization ="1"
 				PrecompiledHeaderFile="$(IntDir)\360.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,NDEBUG"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,NDEBUG"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -109,12 +109,10 @@
 				AdditionalDependencies="utilities.lib soui.lib"
 				AdditionalLibraryDirectories="..\bin"
 				AdditionalOptions="&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot;"
-				EnableCOMDATFolding="2"
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="false"
 				IgnoreImportLibrary="true"
 				LinkIncremental="1"
 				LinkTimeCodeGeneration="0"
-				OptimizeReferences="2"
 				OutputFile="$(OutDir)\360.exe"
 				ProgramDatabaseFile=""
 				SubSystem="2"
@@ -135,7 +133,7 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS" />
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS" />
 		</Configuration>
 	</Configurations>
 	<Files>
@@ -147,6 +145,10 @@
 				RelativePath="360.cpp" />
 			<File
 				RelativePath="MainDlg.cpp" />
+			<File
+				RelativePath="sanimimg.cpp" />
+			<File
+				RelativePath="stabctrl2.cpp" />
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -156,6 +158,10 @@
 				RelativePath="MainDlg.h" />
 			<File
 				RelativePath="resource.h" />
+			<File
+				RelativePath="sanimimg.h" />
+			<File
+				RelativePath="stabctrl2.h" />
 			<File
 				RelativePath="stdafx.h">
 				<FileConfiguration

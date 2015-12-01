@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9,00"
 	Name="SoSmiley"
-	ProjectGUID="{97E4C8A6-6AE4-3FCC-98A0-304F82982778}"
+	ProjectGUID="{A0B6DB10-725B-3D20-B141-E22ECCFDCD30}"
 	Keyword="Qt4VSv1.0">
 	<Platforms>
 		<Platform
@@ -14,14 +14,14 @@
 			Name="Debug|Win32"
 			OutputDirectory="..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="2"
 			IntermediateDirectory="..\obj\debug\SoSmiley\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\config&quot;,..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\obj\debug\SoSmiley\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -32,9 +32,9 @@
 				Optimization ="4"
 				PrecompiledHeaderFile="$(IntDir)\SoSmileyd.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_ATL_ATTRIBUTES"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_ATL_ATTRIBUTES"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -72,20 +72,20 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_ATL_ATTRIBUTES,_DEBUG" />
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_ATL_ATTRIBUTES,_DEBUG" />
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="2"
 			IntermediateDirectory="..\obj\release\SoSmiley\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\config&quot;,..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\obj\release\SoSmiley\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -96,9 +96,9 @@
 				Optimization ="1"
 				PrecompiledHeaderFile="$(IntDir)\SoSmiley.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_ATL_ATTRIBUTES,NDEBUG"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_ATL_ATTRIBUTES,NDEBUG"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -109,13 +109,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalLibraryDirectories="..\bin"
-				EnableCOMDATFolding="2"
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="false"
 				IgnoreImportLibrary="true"
 				LinkIncremental="1"
 				LinkTimeCodeGeneration="0"
 				MergedIDLBaseFileName="_SoSmiley.idl"
-				OptimizeReferences="2"
 				OutputFile="$(OutDir)\SoSmiley.dll"
 				ProgramDatabaseFile=""
 				SubSystem="0"
@@ -139,7 +137,7 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_ATL_ATTRIBUTES" />
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_ATL_ATTRIBUTES" />
 		</Configuration>
 	</Configurations>
 	<Files>

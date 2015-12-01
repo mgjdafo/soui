@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9,00"
 	Name="translator"
-	ProjectGUID="{011C35B5-1944-3E4F-8E34-5E17EA3BC205}"
+	ProjectGUID="{8D98F1FC-95A9-3DD3-AA14-F0D703BA4185}"
 	Keyword="Qt4VSv1.0">
 	<Platforms>
 		<Platform
@@ -14,14 +14,14 @@
 			Name="Debug|Win32"
 			OutputDirectory="..\..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="2"
 			IntermediateDirectory="..\..\obj\debug\translator\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\..\utilities\include&quot;,&quot;..\..\soui\include&quot;,&quot;..\..\config&quot;,..\..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\..\obj\debug\translator\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -32,9 +32,9 @@
 				Optimization ="4"
 				PrecompiledHeaderFile="$(IntDir)\translatord.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -69,20 +69,20 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_DEBUG" />
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_DEBUG" />
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
+			CharacterSet="2"
 			ConfigurationType="2"
 			IntermediateDirectory="..\..\obj\release\translator\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\..\utilities\include&quot;,&quot;..\..\soui\include&quot;,&quot;..\..\config&quot;,..\..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\..\obj\release\translator\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -93,9 +93,9 @@
 				Optimization ="1"
 				PrecompiledHeaderFile="$(IntDir)\translator.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,NDEBUG"
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,NDEBUG"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -107,12 +107,10 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="utilities.lib"
 				AdditionalLibraryDirectories="..\..\bin"
-				EnableCOMDATFolding="2"
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="false"
 				IgnoreImportLibrary="true"
 				LinkIncremental="1"
 				LinkTimeCodeGeneration="0"
-				OptimizeReferences="2"
 				OutputFile="$(OutDir)\translator.dll"
 				ProgramDatabaseFile=""
 				SubSystem="0"
@@ -133,7 +131,7 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS" />
+				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS" />
 		</Configuration>
 	</Configurations>
 	<Files>
