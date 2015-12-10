@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9,00"
 	Name="scriptmodule-lua"
-	ProjectGUID="{6DE08160-AEB4-3549-B5B7-D4B06DEB99CE}"
+	ProjectGUID="{5E8BCBC7-B946-3938-8AE6-8EE661E4E2B6}"
 	Keyword="Qt4VSv1.0">
 	<Platforms>
 		<Platform
@@ -14,14 +14,14 @@
 			Name="Debug|Win32"
 			OutputDirectory="..\..\..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			CharacterSet="1"
 			ConfigurationType="2"
 			IntermediateDirectory="..\..\..\obj\debug\scriptmodule-lua\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\lua-52\src&quot;,&quot;..\..\..\soui\include&quot;,&quot;..\..\..\utilities\include&quot;,&quot;..\..\..\config&quot;,..\..\..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
 				AssemblerListingLocation="..\..\..\obj\debug\scriptmodule-lua\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -32,9 +32,9 @@
 				Optimization ="4"
 				PrecompiledHeaderFile="$(IntDir)\scriptmodule-luad.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -69,20 +69,20 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,_DEBUG" />
+				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,_DEBUG" />
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\..\bin\"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			CharacterSet="1"
 			ConfigurationType="2"
 			IntermediateDirectory="..\..\..\obj\release\scriptmodule-lua\"
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\lua-52\src&quot;,&quot;..\..\..\soui\include&quot;,&quot;..\..\..\utilities\include&quot;,&quot;..\..\..\config&quot;,..\..\..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
 				AssemblerListingLocation="..\..\..\obj\release\scriptmodule-lua\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -93,9 +93,9 @@
 				Optimization ="1"
 				PrecompiledHeaderFile="$(IntDir)\scriptmodule-lua.pch"
 				PrecompiledHeaderThrough="stdafx.h"
-				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS,NDEBUG"
+				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS,NDEBUG"
 				ProgramDataBaseFileName="$(IntDir)"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				RuntimeTypeInfo="false"
 				SuppressStartupBanner="true"
 				TreatWChar_tAsBuiltInType="true"
@@ -107,10 +107,12 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="lua-52.lib soui.lib utilities.lib"
 				AdditionalLibraryDirectories="..\..\..\bin"
-				GenerateDebugInformation="false"
+				EnableCOMDATFolding="2"
+				GenerateDebugInformation="true"
 				IgnoreImportLibrary="true"
 				LinkIncremental="1"
 				LinkTimeCodeGeneration="0"
+				OptimizeReferences="2"
 				OutputFile="$(OutDir)\scriptmodule-lua.dll"
 				ProgramDatabaseFile=""
 				SubSystem="0"
@@ -131,7 +133,7 @@
 				Name="VCPreLinkEventTool" />
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_WINDOWS,WIN32,_CRT_SECURE_NO_WARNINGS" />
+				PreprocessorDefinitions="_WINDOWS,UNICODE,WIN32,_CRT_SECURE_NO_WARNINGS" />
 		</Configuration>
 	</Configurations>
 	<Files>
