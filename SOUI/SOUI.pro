@@ -35,7 +35,6 @@ INCLUDEPATH += . \
 
 # Input
 HEADERS += include/SApp.h \
-           include/activex/SAxHost.h \
            include/activex/SBStr.h \
            include/control/SActiveX.h \
            include/control/SCalendar.h \
@@ -65,6 +64,7 @@ HEADERS += include/SApp.h \
            include/control/SListView.h \
            include/control/SMcListView.h \
            include/control/SSpinButtonCtrl.h \
+           include/control/STileView.h \
            include/core/Accelerator.h \
            include/core/FocusManager.h \
            include/core/SDefine.h \
@@ -117,7 +117,9 @@ HEADERS += include/SApp.h \
 		   include/helper/SAdapterBase.h \
 		   include/helper/SwndFinder.h \
 		   include/helper/SListViewItemLocator.h \
+		   include/helper/STileViewItemLocator.h \
 		   include/helper/smenuex.h \
+		   include/helper/smatrix.h \
            include/interface/imgdecoder-i.h \
            include/interface/render-i.h \
            include/interface/SResProvider-i.h \
@@ -169,6 +171,7 @@ SOURCES += src/SApp.cpp \
            src/control/SListView.cpp \
            src/control/SMcListView.cpp \
            src/control/SSpinButtonCtrl.cpp \
+           src/control/STileView.cpp \
            src/core/Accelerator.cpp \
            src/core/FocusManager.cpp \
            src/core/SDropTargetDispatcher.cpp \
@@ -199,8 +202,10 @@ SOURCES += src/SApp.cpp \
            src/helper/stooltip.cpp \
 		   src/helper/AppDir.cpp \
 		   src/helper/SListViewItemLocator.cpp \
+		   src/helper/STileViewItemLocator.cpp \
    		   src/helper/SwndFinder.cpp \
    		   src/helper/smenuex.cpp \
+   		   src/helper/smatrix.cpp \
            src/res.mgr/SFontPool.cpp \
            src/res.mgr/SObjDefAttr.cpp \
            src/res.mgr/SResProvider.cpp \

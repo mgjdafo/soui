@@ -347,6 +347,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\helper\SMatrix.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\control\SMCListView.cpp"
 				>
 			</File>
@@ -436,6 +440,14 @@
 			</File>
 			<File
 				RelativePath="src\control\STabCtrl.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\control\STileView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\helper\STileViewItemLocator.cpp"
 				>
 			</File>
 			<File
@@ -709,6 +721,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\helper\SMatrix.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\control\SMCListView.h"
 				>
 			</File>
@@ -858,6 +874,14 @@
 			</File>
 			<File
 				RelativePath="include\control\STabCtrl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\control\STileView.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\helper\STileViewItemLocator.h"
 				>
 			</File>
 			<File
