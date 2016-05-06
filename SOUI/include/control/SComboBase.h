@@ -189,23 +189,23 @@ namespace SOUI
         virtual SWindow* GetDropDownOwner();
 
         /**
-        * SComboBoxBase::OnDropDown
+        * SComboBoxBase::OnCreateDropDown
         * @brief    下拉事件
         * @param     SDropDownWnd *pDropDown -- 下拉窗口指针
         *
         * Describe  下拉事件
         */
-        virtual void OnDropDown(SDropDownWnd *pDropDown);
+        virtual void OnCreateDropDown(SDropDownWnd *pDropDown);
 
         /**
-        * SComboBoxBase::OnCloseUp
+        * SComboBoxBase::OnDestroyDropDown
         * @brief    下拉事件
         * @param     SDropDownWnd *pDropDown -- 下拉窗口指针
         * @param     UINT uCode -- 消息码
         *
         * Describe  下拉关闭
         */
-        virtual void OnCloseUp(SDropDownWnd *pDropDown,UINT uCode);
+        virtual void OnDestroyDropDown(SDropDownWnd *pDropDown);
 
         /**
         * SComboBoxBase::OnSelChanged
@@ -284,6 +284,8 @@ namespace SOUI
         */
         virtual void SetWindowText(LPCTSTR pszText);
 
+        virtual void OnColorize(COLORREF cr);
+        
         /**
         * SComboBoxBase::OnPaint
         * @brief    绘制消息
@@ -366,9 +368,9 @@ namespace SOUI
         */  
         BOOL IsFocusable();
 
-        void OnSetFocus();
+        void OnSetFocus(SWND wndOld);
         
-        void OnKillFocus();
+        void OnKillFocus(SWND wndFocus);
 
         SOUI_ATTRS_BEGIN()
             ATTR_INT(L"dropDown", m_bDropdown, FALSE)
@@ -376,7 +378,6 @@ namespace SOUI
             ATTR_INT(L"curSel", m_iInitSel, FALSE)
             ATTR_SKIN(L"btnSkin", m_pSkinBtn, FALSE)
             ATTR_INT(L"animateTime", m_nAnimTime, FALSE)
-            ATTR_INT(L"textOffset",m_nTextOffset,TRUE)
         SOUI_ATTRS_END()
 
         SOUI_MSG_MAP_BEGIN()
@@ -418,7 +419,6 @@ namespace SOUI
         int  m_nDropHeight;      /**< 下拉框高度 */
         int  m_nAnimTime;        /**< 动画时间   */
         int  m_iInitSel;         /**< 默认选中索引 */
-        int  m_nTextOffset;      /**< 文本显示的偏移 */
         SDropDownWnd *m_pDropDownWnd;  /**< DropDown指针 */
     };
 

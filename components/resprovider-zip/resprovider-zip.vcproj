@@ -20,8 +20,8 @@
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\zlib&quot;,&quot;..\..\soui\include&quot;,&quot;..\..\utilities\include&quot;,&quot;..\..\config&quot;,..\..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\..\third-part\zlib&quot;,&quot;..\..\soui\include&quot;,&quot;..\..\utilities\include&quot;,&quot;..\..\config&quot;,..\..\tools\mkspecs\win32-msvc2008"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\..\obj\debug\resprovider-zip\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"
@@ -81,8 +81,8 @@
 			UseOfMfc="0">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\zlib&quot;,&quot;..\..\soui\include&quot;,&quot;..\..\utilities\include&quot;,&quot;..\..\config&quot;,..\..\tools\mkspecs\win32-msvc2008"
-				AdditionalOptions="-Zm200 -w34100 -w34189"
+				AdditionalIncludeDirectories="&quot;.&quot;,&quot;..\..\third-part\zlib&quot;,&quot;..\..\soui\include&quot;,&quot;..\..\utilities\include&quot;,&quot;..\..\config&quot;,..\..\tools\mkspecs\win32-msvc2008"
+				AdditionalOptions="-Zm200 /MP -w34100 -w34189"
 				AssemblerListingLocation="..\..\obj\release\resprovider-zip\"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4100,4101,4102,4189,4996"

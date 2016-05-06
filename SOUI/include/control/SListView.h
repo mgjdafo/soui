@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/Swnd.h"
+#include "core/SItemPanel.h"
 #include "interface/Adapter-i.h"
 #include "interface/LvItemLocator-i.h"
-
 namespace SOUI
 {
     
@@ -17,9 +17,9 @@ namespace SOUI
         SListView();
         ~SListView();
 
-        BOOL SetAdapter(IAdapter * adapter);
+        BOOL SetAdapter(ILvAdapter * adapter);
         
-        IAdapter * GetAdapter() {
+        ILvAdapter * GetAdapter() {
             return m_adapter;
         }
         
@@ -42,6 +42,9 @@ namespace SOUI
     protected:
         void onDataSetChanged();
         void onDataSetInvalidated();
+
+    protected:
+        bool OnItemClick(EventArgs *pEvt);
         
     protected:
         virtual BOOL OnScroll(BOOL bVertical,UINT uCode,int nPos);
@@ -51,8 +54,9 @@ namespace SOUI
         virtual BOOL OnUpdateToolTip(CPoint pt, SwndToolTipInfo & tipInfo);
         virtual UINT OnGetDlgCode();
         virtual BOOL OnSetCursor(const CPoint &pt);
+
+		virtual void OnColorize(COLORREF cr);
     protected:
-        void _SetSel(int iItem,BOOL bNotify, SWND hHitWnd);
 
         void UpdateScrollBar();
         void RedrawItem(SItemPanel *pItem);
@@ -74,9 +78,9 @@ namespace SOUI
 
         BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
         
-        void OnKillFocus();
+        void OnKillFocus(SWND wndFocus);
         
-        void OnSetFocus();
+        void OnSetFocus(SWND wndOld);
 
         SOUI_MSG_MAP_BEGIN()
             MSG_WM_PAINT_EX(OnPaint)
@@ -98,8 +102,8 @@ namespace SOUI
             ATTR_INT(L"wantTab",m_bWantTab,FALSE)
         SOUI_ATTRS_END()
     protected:
-        CAutoRefPtr<IAdapter>           m_adapter;
-        CAutoRefPtr<IDataSetObserver>   m_observer;
+        CAutoRefPtr<ILvAdapter>           m_adapter;
+        CAutoRefPtr<ILvDataSetObserver>   m_observer;
         CAutoRefPtr<IListViewItemLocator>  m_lvItemLocator;//列表项定位接口
         struct ItemInfo
         {
@@ -113,6 +117,7 @@ namespace SOUI
         
         int                             m_iSelItem;
         SItemPanel*                     m_pHoverItem;
+        BOOL                            m_bDataSetInvalidated;
         
         SArray<SList<SItemPanel*> *>    m_itemRecycle;//item回收站,每一种样式在回收站中保持一个列表，以便重复利用
                 

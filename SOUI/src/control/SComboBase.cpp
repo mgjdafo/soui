@@ -49,8 +49,8 @@ namespace SOUI
     // SDropDownWnd_ComboBox
     BOOL SDropDownWnd_ComboBox::PreTranslateMessage( MSG* pMsg )
     {
-        SDropDownWnd::PreTranslateMessage(pMsg);
-
+        if(SDropDownWnd::PreTranslateMessage(pMsg))
+            return TRUE;
         if(pMsg->message==WM_MOUSEWHEEL 
             || ((pMsg->message == WM_KEYDOWN || pMsg->message==WM_KEYUP) && (pMsg->wParam == VK_UP || pMsg->wParam==VK_DOWN || pMsg->wParam==VK_RETURN || pMsg->wParam==VK_ESCAPE)))
         {//截获滚轮及上下键消息
@@ -72,7 +72,6 @@ namespace SOUI
         ,m_nAnimTime(200)
         ,m_pDropDownWnd(NULL)
         ,m_iInitSel(-1)
-        ,m_nTextOffset(0)
     {
         m_bFocusable=TRUE;
         m_style.SetAttribute(L"align",L"left",TRUE);
@@ -106,7 +105,7 @@ namespace SOUI
                 m_pEdit->SSendMessage(WM_CREATE);
             m_pEdit->GetEventSet()->setMutedState(false);
             SStringW strPos;
-            strPos.Format(L"%d,0,-%d,-0",m_nTextOffset,szBtn.cx);
+            strPos.Format(L"%d,%d,-%d,-%d",m_style.m_rcInset.left,m_style.m_rcInset.top,m_style.m_rcInset.right+szBtn.cx,m_style.m_rcInset.bottom);
             m_pEdit->SetAttribute(L"pos",strPos,TRUE);
             m_pEdit->SetID(IDC_CB_EDIT);
             m_pEdit->SSendMessage(EM_SETEVENTMASK,0 ,ENM_CHANGE );
@@ -125,10 +124,11 @@ namespace SOUI
 
     void SComboBase::GetTextRect( LPRECT pRect )
     {
-        GetClientRect(pRect);
-        pRect->left += m_nTextOffset;
+        CRect rc = GetClientRect();
+        rc.DeflateRect(m_style.m_rcInset);
         SIZE szBtn=m_pSkinBtn->GetSkinSize();
-        pRect->right-=szBtn.cx;
+        rc.right-=szBtn.cx;
+        *pRect = rc;
     }
 
     void SComboBase::OnPaint(IRenderTarget * pRT )
@@ -229,16 +229,15 @@ namespace SOUI
     }
 
 
-    void SComboBase::OnDropDown( SDropDownWnd *pDropDown )
+    void SComboBase::OnCreateDropDown( SDropDownWnd *pDropDown )
     {
         m_dwBtnState=WndState_PushDown;
         CRect rcBtn;
         GetDropBtnRect(&rcBtn);
         InvalidateRect(rcBtn);
-        ((CSimpleWnd*)pDropDown)->SetCapture();
     }
 
-    void SComboBase::OnCloseUp(SDropDownWnd *pDropDown,UINT uCode)
+    void SComboBase::OnDestroyDropDown(SDropDownWnd *pDropDown)
     {
         if (!m_bDropdown && m_pEdit)
         {
@@ -257,7 +256,7 @@ namespace SOUI
         ScreenToClient(GetContainer()->GetHostHwnd(),&pt);
         ::PostMessage(GetContainer()->GetHostHwnd(),WM_MOUSEMOVE,0,MAKELPARAM(pt.x,pt.y));
 
-        if(uCode==IDOK)
+        if(pDropDown->GetExitCode()==IDOK)
         {
             OnSelChanged();
         }
@@ -307,10 +306,14 @@ namespace SOUI
             CRect rcPopup;
             BOOL bDown=CalcPopupRect(GetListBoxHeight(),rcPopup);
             m_pDropDownWnd->Create(rcPopup,0);
+            m_pDropDownWnd->GetRoot()->GetStyle().m_crBg = RGBA(0xFF,0xFF,0xFF,0xFF);//设置一个主窗口的背景色,以保证窗口在绘制列表滚动条前先绘制一个不透明的背景
+            
             if(m_nAnimTime>0)
                 m_pDropDownWnd->AnimateHostWindow(m_nAnimTime,AW_SLIDE|(bDown?AW_VER_POSITIVE:AW_VER_NEGATIVE));
             else
                 m_pDropDownWnd->SetWindowPos(HWND_TOP,0,0,0,0,SWP_SHOWWINDOW|SWP_NOMOVE|SWP_NOZORDER|SWP_NOSIZE|SWP_NOACTIVATE);
+                
+            m_pDropDownWnd->CSimpleWnd::SetCapture();
         }
     }
 
@@ -323,12 +326,12 @@ namespace SOUI
     }
 
 
-    void SComboBase::OnSetFocus()
+    void SComboBase::OnSetFocus(SWND wndOld)
     {
         if(m_pEdit) 
             m_pEdit->SetFocus();
         else
-            __super::OnSetFocus();
+            __super::OnSetFocus(wndOld);
     }
 
 
@@ -389,10 +392,16 @@ namespace SOUI
         }
     }
 
-    void SComboBase::OnKillFocus()
+    void SComboBase::OnKillFocus(SWND wndFocus)
     {
-        __super::OnKillFocus();
+        __super::OnKillFocus(wndFocus);
         CloseUp();
+    }
+
+    void SComboBase::OnColorize(COLORREF cr)
+    {
+        __super::OnColorize(cr);
+        if(m_pSkinBtn) m_pSkinBtn->OnColorize(cr);
     }
 
 }

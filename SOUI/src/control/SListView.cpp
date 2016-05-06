@@ -6,7 +6,7 @@ namespace SOUI
 {
 
 
-    class SListViewDataSetObserver : public TObjRefImpl<IDataSetObserver>
+    class SListViewDataSetObserver : public TObjRefImpl<ILvDataSetObserver>
     {
     public:
         SListViewDataSetObserver(SListView *pView):m_pOwner(pView)
@@ -41,10 +41,12 @@ namespace SOUI
         ,m_pSkinDivider(NULL)
         ,m_nDividerSize(0)
         ,m_bWantTab(FALSE)
+        ,m_bDataSetInvalidated(FALSE)
     {
         m_bFocusable = TRUE;
         m_observer.Attach(new SListViewDataSetObserver(this));
         m_dwUpdateInterval= 40;
+        m_evtSet.addEvent(EVENTID(EventLVSelChanging));
         m_evtSet.addEvent(EVENTID(EventLVSelChanged));
     }
 
@@ -54,7 +56,7 @@ namespace SOUI
         m_lvItemLocator=NULL;
     }
 
-    BOOL SListView::SetAdapter(IAdapter * adapter)
+    BOOL SListView::SetAdapter(ILvAdapter * adapter)
     {
         if(!m_lvItemLocator)
         {
@@ -95,6 +97,7 @@ namespace SOUI
             m_lvItemLocator->SetAdapter(adapter);
         if(m_adapter) 
         {
+            m_adapter->InitByTemplate(m_xmlTemplate.first_child());
             m_adapter->registerDataSetObserver(m_observer);
             for(int i=0;i<m_adapter->getViewTypeCount();i++)
             {
@@ -146,17 +149,26 @@ namespace SOUI
     {
         if(!m_adapter) return;
         if(m_lvItemLocator) m_lvItemLocator->OnDataSetChanged();
+        if(m_iSelItem != -1 && m_iSelItem >= m_adapter->getCount())
+            m_iSelItem = -1;
         UpdateScrollBar();
         UpdateVisibleItems();
     }
 
     void SListView::onDataSetInvalidated()
     {
-        UpdateVisibleItems();
+        m_bDataSetInvalidated = TRUE;
+        Invalidate();
     }
 
     void SListView::OnPaint(IRenderTarget *pRT)
     {
+        if(m_bDataSetInvalidated)
+        {
+            UpdateVisibleItems();
+            m_bDataSetInvalidated = FALSE;
+        }
+        
         SPainter duiDC;
         BeforePaint(pRT,duiDC);
 
@@ -227,7 +239,8 @@ namespace SOUI
         int iNewFirstVisible = m_lvItemLocator->Position2Item(m_siVer.nPos);
         int iNewLastVisible = iNewFirstVisible;
         int pos = m_lvItemLocator->Item2Position(iNewFirstVisible);
-
+        int iHoverItem = m_pHoverItem?(int)m_pHoverItem->GetItemIndex():-1;
+        m_pHoverItem = NULL;
 
         ItemInfo *pItemInfos = new ItemInfo[m_lstItems.GetCount()];
         SPOSITION spos = m_lstItems.GetHeadPosition();
@@ -243,26 +256,36 @@ namespace SOUI
         {
             while(pos < m_siVer.nPos + (int)m_siVer.nPage && iNewLastVisible < m_adapter->getCount())
             {
+                DWORD dwState = WndState_Normal;
+                if(iHoverItem == iNewLastVisible) dwState |= WndState_Hover;
+                if(m_iSelItem == iNewLastVisible) dwState |= WndState_Check;
+
                 ItemInfo ii={NULL,-1};
+                ii.nType = m_adapter->getItemViewType(iNewLastVisible,dwState);
                 if(iNewLastVisible>=iOldFirstVisible && iNewLastVisible < iOldLastVisible)
                 {//use the old visible item
                     int iItem = iNewLastVisible-iOldFirstVisible;//(iNewLastVisible-iNewFirstVisible) + (iNewFirstVisible-iOldFirstVisible);
                     SASSERT(iItem>=0 && iItem <= (iOldLastVisible-iOldFirstVisible));
-                    ii = pItemInfos[iItem];
-                    pItemInfos[iItem].pItem = NULL;//标记该行已经被重用
-                }else
+                    if(ii.nType == pItemInfos[iItem].nType)
+                    {
+                        ii = pItemInfos[iItem];
+                        pItemInfos[iItem].pItem = NULL;//标记该行已经被重用
+                    }
+                }
+                if(!ii.pItem)
                 {//create new visible item
-                    ii.nType = m_adapter->getItemViewType(iNewLastVisible);
                     SList<SItemPanel *> *lstRecycle = m_itemRecycle.GetAt(ii.nType);
                     if(lstRecycle->IsEmpty())
                     {//创建一个新的列表项
                         ii.pItem = SItemPanel::Create(this,pugi::xml_node(),this);
+                        ii.pItem->GetEventSet()->subscribeEvent(EventItemPanelClick::EventID,Subscriber(&SListView::OnItemClick,this));
                     }else
                     {
                         ii.pItem = lstRecycle->RemoveHead();
                     }
                     ii.pItem->SetItemIndex(iNewLastVisible);
                 }
+                ii.pItem->SetVisible(TRUE);
                 CRect rcItem = GetClientRect();
                 rcItem.MoveToXY(0,0);
                 if(m_lvItemLocator->IsFixHeight())
@@ -270,21 +293,26 @@ namespace SOUI
                     rcItem.bottom=m_lvItemLocator->GetItemHeight(iNewLastVisible);
                     ii.pItem->Move(rcItem);
                 }
+
+                //设置状态，同时暂时禁止应用响应statechanged事件。
+                ii.pItem->GetEventSet()->setMutedState(true);
+                ii.pItem->ModifyItemState(dwState,0);
+                ii.pItem->GetEventSet()->setMutedState(false);
+                if(dwState & WndState_Hover)
+                    m_pHoverItem = ii.pItem;
+
                 m_adapter->getView(iNewLastVisible,ii.pItem,m_xmlTemplate.first_child());
+				ii.pItem->DoColorize(GetColorizeColor());
                 if(!m_lvItemLocator->IsFixHeight())
                 {
                     rcItem.bottom=0;
-                    CSize szItem = ii.pItem->GetDesiredSize(rcItem);
+                    CSize szItem = m_adapter->getViewDesiredSize(iNewLastVisible,ii.pItem,&rcItem);
                     rcItem.bottom = rcItem.top + szItem.cy;
                     ii.pItem->Move(rcItem);
                     m_lvItemLocator->SetItemHeight(iNewLastVisible,szItem.cy);
                 }                
                 ii.pItem->UpdateLayout();
-                if(iNewLastVisible == m_iSelItem)
-                {
-                    ii.pItem->ModifyItemState(WndState_Check,0);
-                }
-                
+                    
                 m_lstItems.AddTail(ii);
                 pos += rcItem.bottom + m_lvItemLocator->GetDividerSize();
 
@@ -297,17 +325,18 @@ namespace SOUI
         {
             ItemInfo ii = pItemInfos[i];
             if(!ii.pItem) continue;
-
-            if(ii.pItem == m_pHoverItem)
+            ii.pItem->GetEventSet()->setMutedState(true);
+            if(ii.pItem->GetState() & WndState_Hover)
             {
-                m_pHoverItem->DoFrameEvent(WM_MOUSELEAVE,0,0);
-                m_pHoverItem=NULL;
+                ii.pItem->DoFrameEvent(WM_MOUSELEAVE,0,0);
             }
-            if(ii.pItem->GetItemIndex() == m_iSelItem)
+            if(ii.pItem->GetState() & WndState_Check)
             {
                 ii.pItem->ModifyItemState(0,WndState_Check);
                 ii.pItem->GetFocusManager()->SetFocusedHwnd(0);
             }
+            ii.pItem->SetVisible(FALSE);
+            ii.pItem->GetEventSet()->setMutedState(false);
             m_itemRecycle[ii.nType]->AddTail(ii.pItem);    
         }
         delete [] pItemInfos;
@@ -425,17 +454,15 @@ namespace SOUI
 
     LRESULT SListView::OnMouseEvent(UINT uMsg,WPARAM wParam,LPARAM lParam)
     {
+        SetMsgHandled(FALSE);
         if(!m_adapter)
         {
-            SetMsgHandled(FALSE);
             return 0;
         }
 
         LRESULT lRet=0;
         CPoint pt(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 
-        if(uMsg == WM_LBUTTONDOWN)
-            __super::OnLButtonDown(wParam,pt);
 
         if(m_itemCapture)
         {
@@ -445,8 +472,10 @@ namespace SOUI
         }
         else
         {
-            if(m_bFocusable && (uMsg==WM_LBUTTONDOWN || uMsg== WM_RBUTTONDOWN || uMsg==WM_LBUTTONDBLCLK))
-                SetFocus();
+            if(uMsg==WM_LBUTTONDOWN || uMsg== WM_RBUTTONDOWN || uMsg==WM_MBUTTONDOWN)
+            {//交给panel处理
+                __super::ProcessSwndMessage(uMsg,wParam,lParam,lRet);
+            }
 
             SItemPanel * pHover=HitTest(pt);
             if(pHover!=m_pHoverItem)
@@ -464,30 +493,17 @@ namespace SOUI
                     RedrawItem(m_pHoverItem);
                 }
             }
-            if(uMsg==WM_LBUTTONDOWN )
-            {//选择一个新行的时候原有行失去焦点
-                SWND hHitWnd = 0;
-                int nSelNew = -1;
-                if(m_pHoverItem)
-                {
-                    nSelNew = m_pHoverItem->GetItemIndex();
-                    hHitWnd = m_pHoverItem->SwndFromPoint(pt,FALSE);
-                }
-
-                _SetSel(nSelNew,TRUE,hHitWnd);
-            }
             if(m_pHoverItem)
             {
                 m_pHoverItem->DoFrameEvent(uMsg,wParam,MAKELPARAM(pt.x,pt.y));
             }
         }
         
-        CPoint pt2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        if(uMsg == WM_LBUTTONUP)
-            __super::OnLButtonUp(wParam,pt2);
-        else if(uMsg == WM_RBUTTONDOWN)
-            __super::OnRButtonDown(uMsg, pt2);
-
+        if(uMsg==WM_LBUTTONUP || uMsg== WM_RBUTTONUP || uMsg==WM_MBUTTONUP)
+        {//交给panel处理
+            __super::ProcessSwndMessage(uMsg,wParam,lParam,lRet);
+        }
+        SetMsgHandled(TRUE);
         return 0;
     }
 
@@ -536,7 +552,7 @@ namespace SOUI
         
         int  nNewSelItem = -1;
         SWindow *pOwner = GetOwner();
-        if (pOwner && (nChar == VK_ESCAPE))
+        if (pOwner && (nChar == VK_ESCAPE || nChar == VK_RETURN))
         {
             pOwner->SSendMessage(WM_KEYDOWN, nChar, MAKELONG(nFlags, nRepCnt));
             return;
@@ -546,8 +562,6 @@ namespace SOUI
             nNewSelItem = m_iSelItem+1;
         else if (nChar == VK_UP && m_iSelItem > 0)
             nNewSelItem = m_iSelItem-1;
-        else if (pOwner && nChar == VK_RETURN)//提供combobox响应回车选中
-            nNewSelItem = m_iSelItem;
         else
         {
             switch(nChar)
@@ -595,23 +609,40 @@ namespace SOUI
         int iLastVisible = m_iFirstVisible + m_lstItems.GetCount();
 
         if(iItem>=iFirstVisible && iItem<iLastVisible)
-            return;
+        {
+            if(iItem == iFirstVisible)
+            {
+                int pos = m_lvItemLocator->Item2Position(iItem);
+                OnScroll(TRUE,SB_THUMBPOSITION,pos);
+            }else if(iItem == iLastVisible-1)
+            {
+                if(iItem == m_adapter->getCount()-1)
+                    OnScroll(TRUE,SB_BOTTOM,0);
+                else
+                {
+                    int pos = m_lvItemLocator->Item2Position(iItem+1) - m_siVer.nPage;
+                    OnScroll(TRUE,SB_THUMBPOSITION,pos);
+                }
+            }
 
-        int pos = m_lvItemLocator->Item2Position(iItem);
+            return;
+        }
+
 
         if(iItem < iFirstVisible)
         {//scroll up
+            int pos = m_lvItemLocator->Item2Position(iItem);
             OnScroll(TRUE,SB_THUMBPOSITION,pos);
         }else // if(iItem >= iLastVisible)
         {//scroll down
-            int iTop = iItem;
-            int pos2 = pos;
-            int topSize = m_siVer.nPage - m_lvItemLocator->GetItemHeight(iItem);
-            while(iTop>=0 && (pos - pos2) < topSize)
+            if(iItem == m_adapter->getCount()-1)
             {
-                pos2 = m_lvItemLocator->Item2Position(--iTop);
+                OnScroll(TRUE,SB_BOTTOM,0);
+            }else
+            {
+                int pos = m_lvItemLocator->Item2Position(iItem+1)-m_siVer.nPage;
+                OnScroll(TRUE,SB_THUMBPOSITION,pos);
             }
-            OnScroll(TRUE,SB_THUMBPOSITION,pos2);
         }
     }
 
@@ -647,10 +678,6 @@ namespace SOUI
         return NULL;
     }
 
-    void SListView::SetSel(int iItem,BOOL bNotify/*=FALSE*/)
-    {
-        _SetSel(iItem,bNotify,0);
-    }
 
     BOOL SListView::CreateChildren(pugi::xml_node xmlNode)
     {
@@ -688,7 +715,7 @@ namespace SOUI
         return m_pHoverItem->OnUpdateToolTip(pt,tipInfo);
     }
 
-    void SListView::_SetSel(int iItem,BOOL bNotify, SWND hHitWnd)
+    void SListView::SetSel(int iItem,BOOL bNotify)
     {
         if(!m_adapter) return;
 
@@ -703,10 +730,9 @@ namespace SOUI
         m_iSelItem = nNewSel;
         if(bNotify)
         {
-            EventLVSelChanged evt(this);
+            EventLVSelChanging evt(this);
             evt.iOldSel = nOldSel;
             evt.iNewSel = nNewSel;
-            evt.hHitWnd =hHitWnd;
             FireEvent(evt);
             if(evt.bCancel) 
             {//Cancel SetSel and restore selection state
@@ -733,6 +759,15 @@ namespace SOUI
             pItem->ModifyItemState(WndState_Check,0);
             RedrawItem(pItem);
         }
+        
+        if(bNotify)
+        {
+            EventLVSelChanged evt(this);
+            evt.iOldSel = nOldSel;
+            evt.iNewSel = nNewSel;
+            FireEvent(evt);
+        }
+
     }
 
     UINT SListView::OnGetDlgCode()
@@ -741,9 +776,9 @@ namespace SOUI
         else return SC_WANTARROWS|SC_WANTSYSKEY;
     }
 
-    void SListView::OnKillFocus()
+    void SListView::OnKillFocus(SWND wndFocus)
     {
-        __super::OnKillFocus();
+        __super::OnKillFocus(wndFocus);
         
         if(m_iSelItem==-1) return;
         
@@ -751,9 +786,9 @@ namespace SOUI
         if(pSelPanel) pSelPanel->GetFocusManager()->StoreFocusedView();
     }
 
-    void SListView::OnSetFocus()
+    void SListView::OnSetFocus(SWND wndOld)
     {
-        __super::OnSetFocus();
+        __super::OnSetFocus(wndOld);
         if(m_iSelItem==-1) return;
 
         SItemPanel *pSelPanel = GetItemPanel(m_iSelItem);
@@ -780,5 +815,29 @@ namespace SOUI
         return bRet;
 
     }
+
+    bool SListView::OnItemClick(EventArgs *pEvt)
+    {
+        SItemPanel *pItemPanel = sobj_cast<SItemPanel>(pEvt->sender);
+        SASSERT(pItemPanel);
+        int iItem = (int)pItemPanel->GetItemIndex();
+        if(iItem != m_iSelItem)
+        {
+            SetSel(iItem,TRUE);
+        }
+        return true;
+
+    }
+
+	void SListView::OnColorize( COLORREF cr )
+	{
+		__super::OnColorize(cr);
+        SPOSITION pos = m_lstItems.GetHeadPosition();
+        while(pos)
+        {
+            ItemInfo ii = m_lstItems.GetNext(pos);
+            ii.pItem->DoColorize(cr);
+        }
+	}
 
 }

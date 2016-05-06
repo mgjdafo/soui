@@ -3,7 +3,7 @@
 
 namespace SOUI
 {
-    SComboView::SComboView(void):m_lvSelChangeHandler(NULL),m_bKeepDropList(FALSE)
+    SComboView::SComboView(void)
     {
     }
 
@@ -39,29 +39,28 @@ namespace SOUI
         {
             IListViewItemLocator * pItemLocator = m_pListBox->GetItemLocator();
             SASSERT(pItemLocator);
-            nDropHeight = min(nDropHeight,pItemLocator->GetTotalHeight()+m_pListBox->GetStyle().m_nMarginY*2);
+            nDropHeight = min(nDropHeight,pItemLocator->GetTotalHeight()+m_pListBox->GetStyle().m_rcMargin.top + m_pListBox->GetStyle().m_rcMargin.bottom);
         }
         return nDropHeight;    
     }
 
-    void SComboView::OnDropDown( SDropDownWnd *pDropDown)
+    void SComboView::OnCreateDropDown( SDropDownWnd *pDropDown)
     {
-        __super::OnDropDown(pDropDown);
+        __super::OnCreateDropDown(pDropDown);
         pDropDown->InsertChild(m_pListBox);
         pDropDown->UpdateChildrenPosition();
-        m_bKeepDropList = FALSE;
         
         m_pListBox->SetVisible(TRUE);
         m_pListBox->SetFocus();
         m_pListBox->EnsureVisible(GetCurSel());
     }
 
-    void SComboView::OnCloseUp( SDropDownWnd *pDropDown ,UINT uCode)
+    void SComboView::OnDestroyDropDown( SDropDownWnd *pDropDown)
     {
         pDropDown->RemoveChild(m_pListBox);
         m_pListBox->SetVisible(FALSE);
         m_pListBox->SetContainer(GetContainer());
-        __super::OnCloseUp(pDropDown,uCode);
+        __super::OnDestroyDropDown(pDropDown);
     }
 
     void SComboView::OnSelChanged()
@@ -84,16 +83,10 @@ namespace SOUI
         {
             if(evt.GetID()==EventLVSelChanged::EventID)
             {
-                if(m_lvSelChangeHandler)
-                {//由应用去判断是不是执行comboview的OnSelChanged();
-                    EventLVSelChanged *pEvtLVSelChanged = sobj_cast<EventLVSelChanged>(&evt);
-                    m_bKeepDropList = m_lvSelChangeHandler->onLVSelChanged(pEvtLVSelChanged);
-                    if(pEvtLVSelChanged->bCancel) return TRUE;
-                }
                 OnSelChanged();
                 return TRUE;
             }
-            if(!m_bKeepDropList && evt.GetID() == EventCmd::EventID)
+            if(evt.GetID() == EventCmd::EventID)
             {
                 CloseUp();
                 return TRUE;
@@ -109,14 +102,14 @@ namespace SOUI
 
     SOUI::SStringT SComboView::GetLBText(int iItem)
     {
-        IAdapter *pAdapter = m_pListBox->GetAdapter();
+        ILvAdapter *pAdapter = m_pListBox->GetAdapter();
         if(!pAdapter || iItem == -1) return SStringT();
         return pAdapter->getItemDesc(iItem);
     }
 
     int SComboView::GetCount() const
     {
-        IAdapter *pAdapter = m_pListBox->GetAdapter();
+        ILvAdapter *pAdapter = m_pListBox->GetAdapter();
         if(!pAdapter) return 0;
         return pAdapter->getCount();
     }
@@ -133,11 +126,6 @@ namespace SOUI
         m_pListBox->SetSel(iSel);
         OnSelChanged();
         return TRUE;
-    }
-
-    void SComboView::SetCVSelChangedHandler(ICVSelChangedHandler *pHandler)
-    {
-        m_lvSelChangeHandler = pHandler;
     }
 
 }

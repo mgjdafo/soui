@@ -237,7 +237,7 @@ HRESULT CSmileySource::Draw( /* [in] */ HDC hdc, /* [in] */ LPCRECT pRect , int 
     return S_OK;
 }
 
-SStringW CSmileySource::ImageID2Path(UINT nID)
+SOUI::SStringW CSmileySource::ImageID2Path(UINT nID)
 {
     return L"";
 }
@@ -559,6 +559,10 @@ CSmileyHost::CSmileyHost(SRichEdit *pRichedit,FunCreateSource pCreateSource)
     //订阅richedit的EN_UPDATE消息,用来更新表情坐标
     m_pHost->GetEventSet()->subscribeEvent(EVT_VISIBLECHANGED,Subscriber(&CSmileyHost::OnHostVisibleChanged,this));
     m_pHost->GetEventSet()->subscribeEvent(EventRENotify::EventID,Subscriber(&CSmileyHost::OnHostUpdate,this));
+    if(pRichedit->IsVisible(TRUE))
+    {
+        m_pHost->GetContainer()->RegisterTimelineHandler(this);
+    }
 }
 
 CSmileyHost::~CSmileyHost()
@@ -725,6 +729,7 @@ bool CSmileyHost::OnHostUpdate(SOUI::EventArgs *pEvt)
     }
     return false; 
 }
+
 
 
 //////////////////////////////////////////////////////////////////////////

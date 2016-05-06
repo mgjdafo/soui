@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Swnd.h"
+#include "core/SItemPanel.h"
 #include "interface/Adapter-i.h"
 #include "helper/STileViewItemLocator.h"
 
@@ -17,9 +18,9 @@ public:
     STileView();
     ~STileView();
     
-    BOOL SetAdapter(IAdapter *adapter);
+    BOOL SetAdapter(ILvAdapter *adapter);
     
-    IAdapter *GetAdapter()
+    ILvAdapter *GetAdapter()
     {
         return m_adapter;
     }
@@ -49,6 +50,9 @@ protected:
     void onDataSetInvalidated();
     
 protected:
+    bool OnItemClick(EventArgs *pEvt);
+
+protected:
     virtual BOOL OnScroll(BOOL bVertical, UINT uCode, int nPos);
     virtual int  GetScrollLineSize(BOOL bVertical);
     virtual BOOL CreateChildren(pugi::xml_node xmlNode);
@@ -56,9 +60,8 @@ protected:
     virtual BOOL OnUpdateToolTip(CPoint pt, SwndToolTipInfo &tipInfo);
     virtual UINT OnGetDlgCode();
     virtual BOOL OnSetCursor(const CPoint &pt);
-
+    virtual void OnColorize(COLORREF cr);
 protected:
-    void _SetSel(int iItem, BOOL bNotify, SWND hHitWnd);
     
     void UpdateScrollBar();
     void RedrawItem(SItemPanel *pItem);
@@ -81,9 +84,9 @@ protected:
     
     BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
     
-    void OnKillFocus();
+    void OnKillFocus(SWND wndFocus);
     
-    void OnSetFocus();
+    void OnSetFocus(SWND wndOld);
     
     SOUI_MSG_MAP_BEGIN()
     MSG_WM_PAINT_EX(OnPaint)
@@ -104,8 +107,8 @@ protected:
     ATTR_INT(L"wantTab", m_bWantTab, FALSE)
     SOUI_ATTRS_END()
 protected:
-    CAutoRefPtr<IAdapter>           m_adapter;
-    CAutoRefPtr<IDataSetObserver>   m_observer;
+    CAutoRefPtr<ILvAdapter>           m_adapter;
+    CAutoRefPtr<ILvDataSetObserver>   m_observer;
     CAutoRefPtr<STileViewItemLocator>  m_tvItemLocator;//列表项定位接口
     struct ItemInfo
     {
@@ -125,5 +128,6 @@ protected:
     pugi::xml_document              m_xmlTemplate;
     int                             m_nMarginSize;
     BOOL                            m_bWantTab;
+    BOOL                            m_bDatasetInvalidated;
 };
 }

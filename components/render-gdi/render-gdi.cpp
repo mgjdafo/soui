@@ -606,7 +606,7 @@ namespace SOUI
 
     HRESULT SRenderTarget_GDI::DrawIconEx( int xLeft, int yTop, HICON hIcon, int cxWidth,int cyWidth,UINT diFlags )
     {
-        ICONINFO ii;
+        ICONINFO ii={0};
         ::GetIconInfo(hIcon,&ii);
         SASSERT(ii.hbmColor);
         BITMAP bm;
@@ -624,7 +624,10 @@ namespace SOUI
         {
             CGdiAlpha::AlphaRestore(ai);
         }
-
+        
+        if(ii.hbmColor) DeleteObject(ii.hbmColor);
+        if(ii.hbmMask) DeleteObject(ii.hbmMask);
+        
         return bRet?S_OK:S_FALSE;
     }
 
@@ -634,10 +637,12 @@ namespace SOUI
         HBITMAP bmp=pBmp->GetBitmap();
         HDC hmemdc=CreateCompatibleDC(m_hdc);
         ::SelectObject(hmemdc,bmp);
-
+        SIZE szBmp = pBmp->Size();
+        
         BLENDFUNCTION bf={ AC_SRC_OVER,0,byAlpha,AC_SRC_ALPHA};
-        int nWid=pRcDest->right-pRcDest->left;
-        int nHei=pRcDest->bottom-pRcDest->top;
+        int nWid= min(pRcDest->right-pRcDest->left,szBmp.cx);
+        int nHei= min(pRcDest->bottom-pRcDest->top,szBmp.cy);
+        
         BOOL bOK=::AlphaBlend(m_hdc,pRcDest->left,pRcDest->top,nWid,nHei,
                    hmemdc,xSrc,ySrc,nWid,nHei,bf);
         DeleteDC(hmemdc);

@@ -4,7 +4,7 @@
 namespace SOUI
 {
 
-class STileViewDataSetObserver : public TObjRefImpl<IDataSetObserver>
+class STileViewDataSetObserver : public TObjRefImpl<ILvDataSetObserver>
 {
 public:
     STileViewDataSetObserver(STileView *pView): m_pOwner(pView)
@@ -41,6 +41,7 @@ STileView::STileView()
     m_bFocusable = TRUE;
     m_observer.Attach(new STileViewDataSetObserver(this));
     m_dwUpdateInterval = 40;
+    m_evtSet.addEvent(EVENTID(EventLVSelChanging));
     m_evtSet.addEvent(EVENTID(EventLVSelChanged));
 }
 
@@ -50,7 +51,7 @@ STileView::~STileView()
     m_tvItemLocator = NULL;
 }
 
-BOOL STileView::SetAdapter(IAdapter *adapter)
+BOOL STileView::SetAdapter(ILvAdapter *adapter)
 {
     if(!m_tvItemLocator)
     {
@@ -94,6 +95,7 @@ BOOL STileView::SetAdapter(IAdapter *adapter)
     }
     if(m_adapter)
     {
+        m_adapter->InitByTemplate(m_xmlTemplate.first_child());
         m_adapter->registerDataSetObserver(m_observer);
         for(int i = 0; i < m_adapter->getViewTypeCount(); i++)
         {
@@ -151,17 +153,26 @@ void STileView::onDataSetChanged()
     {
         m_tvItemLocator->OnDataSetChanged();
     }
+    if(m_iSelItem != -1 && m_iSelItem >= m_adapter->getCount())
+        m_iSelItem = -1;
+
     UpdateScrollBar();
     UpdateVisibleItems();
 }
 
 void STileView::onDataSetInvalidated()
 {
-    UpdateVisibleItems();
+    m_bDatasetInvalidated = TRUE;
+    Invalidate();
 }
 
 void STileView::OnPaint(IRenderTarget *pRT)
 {
+    if(m_bDatasetInvalidated)
+    {
+        UpdateVisibleItems();
+        m_bDatasetInvalidated=FALSE;
+    }
     SPainter duiDC;
     BeforePaint(pRT, duiDC);
     
@@ -236,7 +247,8 @@ void STileView::UpdateVisibleItems()
     int iNewLastVisible = iNewFirstVisible;
     
     int pos = m_tvItemLocator->Item2Position(iNewFirstVisible);
-    
+    int iHoverItem = m_pHoverItem?(int)m_pHoverItem->GetItemIndex():-1;
+
     ItemInfo *pItemInfos = new ItemInfo[m_lstItems.GetCount()];
     SPOSITION spos = m_lstItems.GetHeadPosition();
     int i = 0;
@@ -251,24 +263,32 @@ void STileView::UpdateVisibleItems()
     {
         while(pos < m_siVer.nPos + (int)m_siVer.nPage && iNewLastVisible < m_adapter->getCount())
         {
+            DWORD dwState = WndState_Normal;
+            if(iHoverItem == iNewLastVisible) dwState |= WndState_Hover;
+            if(m_iSelItem == iNewLastVisible) dwState |= WndState_Check;
+
             ItemInfo ii = {NULL, -1};
+            ii.nType = m_adapter->getItemViewType(iNewLastVisible,dwState);
             if(iNewLastVisible >= iOldFirstVisible && iNewLastVisible < iOldLastVisible)
             {
                 //use the old visible item
                 int iItem = iNewLastVisible - iOldFirstVisible;
                 SASSERT(iItem >= 0 && iItem <= (iOldLastVisible - iOldFirstVisible));
-                ii = pItemInfos[iItem];
-                pItemInfos[iItem].pItem = NULL;//标记该行已经被重用
+                if(ii.nType == pItemInfos[iItem].nType)
+                {
+                    ii = pItemInfos[iItem];
+                    pItemInfos[iItem].pItem = NULL;//标记该行已经被重用
+                }
             }
-            else
+            if(!ii.pItem)
             {
                 //create new visible item
-                ii.nType = m_adapter->getItemViewType(iNewLastVisible);
                 SList<SItemPanel *> *lstRecycle = m_itemRecycle.GetAt(ii.nType);
                 if(lstRecycle->IsEmpty())
                 {
                     //创建一个新的列表项
                     ii.pItem = SItemPanel::Create(this, pugi::xml_node(), this);
+                    ii.pItem->GetEventSet()->subscribeEvent(EventItemPanelClick::EventID,Subscriber(&STileView::OnItemClick,this));
                 }
                 else
                 {
@@ -276,10 +296,19 @@ void STileView::UpdateVisibleItems()
                 }
                 ii.pItem->SetItemIndex(iNewLastVisible);
             }
+            ii.pItem->SetVisible(TRUE);
             CRect rcItem = m_tvItemLocator->GetItemRect(iNewLastVisible);
             rcItem.MoveToXY(0, 0);
             ii.pItem->Move(rcItem);
+
+            //设置状态，同时暂时禁止应用响应statechanged事件。
+            ii.pItem->GetEventSet()->setMutedState(true);
+            ii.pItem->ModifyItemState(dwState,0);
+            ii.pItem->GetEventSet()->setMutedState(false);
+
             m_adapter->getView(iNewLastVisible, ii.pItem, m_xmlTemplate.first_child());
+			ii.pItem->DoColorize(GetColorizeColor());
+
             ii.pItem->UpdateLayout();
             if(iNewLastVisible == m_iSelItem)
             {
@@ -305,9 +334,10 @@ void STileView::UpdateVisibleItems()
         {
             continue;
         }
+        ii.pItem->GetEventSet()->setMutedState(true);
         if(ii.pItem == m_pHoverItem)
         {
-            m_pHoverItem->DoFrameEvent(WM_MOUSELEAVE, 0, 0);
+            ii.pItem->DoFrameEvent(WM_MOUSELEAVE, 0, 0);
             m_pHoverItem = NULL;
         }
         if(ii.pItem->GetItemIndex() == m_iSelItem)
@@ -315,6 +345,9 @@ void STileView::UpdateVisibleItems()
             ii.pItem->ModifyItemState(0, WndState_Check);
             ii.pItem->GetFocusManager()->SetFocusedHwnd(0);
         }
+        ii.pItem->GetEventSet()->setMutedState(false);
+
+        ii.pItem->SetVisible(FALSE);
         m_itemRecycle[ii.nType]->AddTail(ii.pItem);
     }
     delete [] pItemInfos;
@@ -428,19 +461,15 @@ SItemPanel *STileView::HitTest(CPoint &pt)
 
 LRESULT STileView::OnMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    SetMsgHandled(FALSE);
     if(!m_adapter)
     {
-        SetMsgHandled(FALSE);
         return 0;
     }
     
     LRESULT lRet = 0;
     CPoint pt(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
     
-    if(uMsg == WM_LBUTTONDOWN)
-    {
-        __super::OnLButtonDown(wParam, pt);
-    }
     
     if(m_itemCapture)
     {
@@ -450,9 +479,9 @@ LRESULT STileView::OnMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
     else
     {
-        if(m_bFocusable && (uMsg == WM_LBUTTONDOWN || uMsg == WM_RBUTTONDOWN || uMsg == WM_LBUTTONDBLCLK))
-        {
-            SetFocus();
+        if(uMsg==WM_LBUTTONDOWN || uMsg== WM_RBUTTONDOWN || uMsg==WM_MBUTTONDOWN)
+        {//交给panel处理
+            __super::ProcessSwndMessage(uMsg,wParam,lParam,lRet);
         }
         
         SItemPanel *pHover = HitTest(pt);
@@ -471,34 +500,17 @@ LRESULT STileView::OnMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 RedrawItem(m_pHoverItem);
             }
         }
-        if(uMsg == WM_LBUTTONDOWN)
-        {
-            //选择一个新行的时候原有行失去焦点
-            SWND hHitWnd = 0;
-            int nSelNew = -1;
-            if(m_pHoverItem)
-            {
-                nSelNew = m_pHoverItem->GetItemIndex();
-                hHitWnd = m_pHoverItem->SwndFromPoint(pt, FALSE);
-            }
-            
-            _SetSel(nSelNew, TRUE, hHitWnd);
-        }
         if(m_pHoverItem)
         {
             m_pHoverItem->DoFrameEvent(uMsg, wParam, MAKELPARAM(pt.x, pt.y));
         }
     }
     
-    CPoint pt2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-    if(uMsg == WM_LBUTTONUP)
-    {
-        __super::OnLButtonUp(wParam, pt2);
+    if(uMsg==WM_LBUTTONUP || uMsg== WM_RBUTTONUP || uMsg==WM_MBUTTONUP)
+    {//交给panel处理
+        __super::ProcessSwndMessage(uMsg,wParam,lParam,lRet);
     }
-    else if(uMsg == WM_RBUTTONDOWN)
-    {
-        __super::OnRButtonDown(uMsg, pt2);
-    }
+    SetMsgHandled(TRUE);
     
     return 0;
 }
@@ -551,7 +563,7 @@ void STileView::OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags)
     
     int  nNewSelItem = -1;
     SWindow *pOwner = GetOwner();
-    if(pOwner && (nChar == VK_ESCAPE))
+    if(pOwner && (nChar == VK_ESCAPE || nChar == VK_RETURN))
     {
         pOwner->SSendMessage(WM_KEYDOWN, nChar, MAKELONG(nFlags, nRepCnt));
         return;
@@ -572,10 +584,6 @@ void STileView::OnKeyDown(TCHAR nChar, UINT nRepCnt, UINT nFlags)
     else if(nChar == VK_DOWN && m_iSelItem < m_adapter->getCount() - 1)
     {
         nNewSelItem = m_tvItemLocator->GetDownItem(m_iSelItem);
-    }
-    else if(pOwner && nChar == VK_RETURN) //提供combobox响应回车选中
-    {
-        nNewSelItem = m_iSelItem;
     }
     else
     {
@@ -675,10 +683,6 @@ SItemPanel *STileView::GetItemPanel(int iItem)
     return NULL;
 }
 
-void STileView::SetSel(int iItem, BOOL bNotify/*=FALSE*/)
-{
-    _SetSel(iItem, bNotify, 0);
-}
 
 BOOL STileView::CreateChildren(pugi::xml_node xmlNode)
 {
@@ -718,7 +722,7 @@ BOOL STileView::OnUpdateToolTip(CPoint pt, SwndToolTipInfo &tipInfo)
     return m_pHoverItem->OnUpdateToolTip(pt, tipInfo);
 }
 
-void STileView::_SetSel(int iItem, BOOL bNotify, SWND hHitWnd)
+void STileView::SetSel(int iItem, BOOL bNotify)
 {
     if(!m_adapter)
     {
@@ -741,10 +745,9 @@ void STileView::_SetSel(int iItem, BOOL bNotify, SWND hHitWnd)
     m_iSelItem = nNewSel;
     if(bNotify)
     {
-        EventLVSelChanged evt(this);
+        EventLVSelChanging evt(this);
         evt.iOldSel = nOldSel;
         evt.iNewSel = nNewSel;
-        evt.hHitWnd = hHitWnd;
         FireEvent(evt);
         if(evt.bCancel)
         {
@@ -774,6 +777,15 @@ void STileView::_SetSel(int iItem, BOOL bNotify, SWND hHitWnd)
         pItem->ModifyItemState(WndState_Check, 0);
         RedrawItem(pItem);
     }
+    
+    if(bNotify)
+    {
+        EventLVSelChanged evt(this);
+        evt.iOldSel = nOldSel;
+        evt.iNewSel = nNewSel;
+        FireEvent(evt);
+    }
+
 }
 
 UINT STileView::OnGetDlgCode()
@@ -788,9 +800,9 @@ UINT STileView::OnGetDlgCode()
     }
 }
 
-void STileView::OnKillFocus()
+void STileView::OnKillFocus(SWND wndFocus)
 {
-    __super::OnKillFocus();
+    __super::OnKillFocus(wndFocus);
     
     if(m_iSelItem == -1)
     {
@@ -804,9 +816,9 @@ void STileView::OnKillFocus()
     }
 }
 
-void STileView::OnSetFocus()
+void STileView::OnSetFocus(SWND wndOld)
 {
-    __super::OnSetFocus();
+    __super::OnSetFocus(wndOld);
     if(m_iSelItem == -1)
     {
         return;
@@ -838,6 +850,30 @@ BOOL STileView::OnSetCursor(const CPoint &pt)
     }
     return bRet;
 
+}
+
+bool STileView::OnItemClick(EventArgs *pEvt)
+{
+    SItemPanel *pItemPanel = sobj_cast<SItemPanel>(pEvt->sender);
+    SASSERT(pItemPanel);
+    int iItem = (int)pItemPanel->GetItemIndex();
+    if(iItem != m_iSelItem)
+    {
+        SetSel(iItem,TRUE);
+    }
+    return true;
+
+}
+
+void STileView::OnColorize(COLORREF cr)
+{
+    __super::OnColorize(cr);
+    SPOSITION pos = m_lstItems.GetHeadPosition();
+    while(pos)
+    {
+        ItemInfo ii = m_lstItems.GetNext(pos);
+        ii.pItem->DoColorize(cr);
+    }
 }
 
 }
