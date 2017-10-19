@@ -3,6 +3,7 @@
 #include "activex/flash10t.tlh"
 #include "activex/wmp.tlh"
 #include <mshtmhst.h>
+//#import "C:\\windows\\system32\\WMP.dll" no_function_mapping //使用这行代码来生成wmp.tlh and wmp.tli
 
 namespace SOUI
 {
@@ -15,7 +16,7 @@ namespace SOUI
         explicit SActiveX();
         virtual ~SActiveX();
 
-        IUnknown * GetIUnknow();
+        IUnknown * GetIUnknown();
     protected:
         virtual void OnAxActivate(IUnknown *pUnknwn){}
 

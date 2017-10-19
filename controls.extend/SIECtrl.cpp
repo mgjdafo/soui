@@ -4,7 +4,7 @@
 namespace SOUI
 {
 
-    SIECtrl::SIECtrl(void):m_dwCookie(0),m_eventDispatch(NULL)
+    SIECtrl::SIECtrl(void):m_dwCookie(0),m_eventDispatch(NULL),m_hIEWnd(NULL)
     {
         m_clsid=CLSID_WebBrowser;
     }
@@ -91,7 +91,13 @@ namespace SOUI
         if(m_pIE)
         {
             RegisterEventHandler(TRUE);
+            m_pIE->put_Silent(VARIANT_TRUE);//
+            
             m_pIE->Navigate(bstr_t(m_strUrl),NULL,NULL,NULL,NULL);
+            
+            SComQIPtr<IOleWindow> ole_window=m_pIE;
+            SASSERT(ole_window);
+            ole_window->GetWindow(&m_hIEWnd);
         }
     }
 
@@ -100,7 +106,8 @@ namespace SOUI
         int nRet=__super::OnCreate(NULL);
         if(GetContainer()->IsTranslucent())
         {
-            SASSERT_FMT(FALSE,_T("iectrl can't used in translucent host"));
+            STRACE(_T("warning!!! create iectrl failed bacause of host is translucent!"));
+//          SASSERT_FMT(FALSE,_T("iectrl can't used in translucent host"));
             return -1;
         }
         GetContainer()->GetMsgLoop()->AddMessageFilter(this);
@@ -116,6 +123,22 @@ namespace SOUI
     {
         BOOL bRet = FALSE;
         if(!m_pIE) return FALSE;
+        if(!IsVisible(TRUE)) return FALSE;
+        
+        HWND hHost = GetContainer()->GetHostHwnd();
+        //检查宿主窗口可见
+        if(!::IsWindowVisible(hHost)) return FALSE;
+        //检查宿主窗口激活
+        if(::GetActiveWindow() != hHost) return FALSE;
+        //检查当前焦点窗口是IE窗口或者子窗口
+        HWND hFocus =::GetFocus();
+        while(hFocus)
+        {
+            if(hFocus == m_hIEWnd) break;
+            hFocus = ::GetParent(hFocus);
+        }
+        if(!hFocus ) return FALSE;
+        
         // give HTML page a chance to translate this message
         SComQIPtr<IOleInPlaceActiveObject> spInPlaceActiveObject(m_pIE);
         if(spInPlaceActiveObject)

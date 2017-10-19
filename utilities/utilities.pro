@@ -25,11 +25,13 @@ PRECOMPILED_HEADER = stdafx.h
 HEADERS += include/gdialpha.h \
            include/souicoll.h \
            include/trace.h \
+           include/snew.h \
            include/utilities-def.h \
            include/utilities.h \
            include/soui_mem_wrapper.h \
            include/atl.mini/atldef.h \
            include/atl.mini/SComCli.h \
+           include/atl.mini/SComHelper.h \
            include/pugixml/pugiconfig.hpp \
            include/pugixml/pugixml.hpp \
            include/string/strcpcvt.h \
@@ -38,7 +40,6 @@ HEADERS += include/gdialpha.h \
            include/unknown/obj-ref-impl.hpp \
            include/com-loader.hpp \
            include/wtl.mini/msgcrack.h \
-           include/wtl.mini/souigdi.h \
            include/wtl.mini/souimisc.h
            
 SOURCES += src/gdialpha.cpp \

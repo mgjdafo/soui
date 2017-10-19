@@ -6,7 +6,7 @@
 #include "GradientFillHelper.h"
 #include <gdialpha.h>
 #include <math.h>
-
+#include <trace.h>
 namespace SOUI
 {
 
@@ -18,9 +18,9 @@ namespace SOUI
         return TRUE;
     }
 
-    BOOL SRenderFactory_GDI::CreateFont( IFont ** ppFont , const LOGFONT &lf )
+    BOOL SRenderFactory_GDI::CreateFont( IFont ** ppFont , const LOGFONT &lf ,LPCTSTR pszPropEx)
     {
-        *ppFont = new SFont_GDI(this,&lf);
+        *ppFont = new SFont_GDI(this,&lf,pszPropEx);
         return TRUE;
     }
 
@@ -94,7 +94,7 @@ namespace SOUI
         return S_OK;
     }
 
-    HRESULT SBitmap_GDI::LoadFromFile( LPCTSTR pszFileName,LPCTSTR pszType )
+    HRESULT SBitmap_GDI::LoadFromFile( LPCTSTR pszFileName)
     {
         CAutoRefPtr<IImgX> imgDecoder;
         GetRenderFactory_GDI()->GetImgDecoderFactory()->CreateImgX(&imgDecoder);
@@ -102,7 +102,7 @@ namespace SOUI
         return ImgFromDecoder(imgDecoder);
     }
 
-    HRESULT SBitmap_GDI::LoadFromMemory(LPBYTE pBuf,size_t szLen,LPCTSTR pszType )
+    HRESULT SBitmap_GDI::LoadFromMemory(LPBYTE pBuf,size_t szLen)
     {
         CAutoRefPtr<IImgX> imgDecoder;
         GetRenderFactory_GDI()->GetImgDecoderFactory()->CreateImgX(&imgDecoder);
@@ -129,17 +129,17 @@ namespace SOUI
         return S_OK;
     }
 
-    UINT SBitmap_GDI::Width()
+    UINT SBitmap_GDI::Width() const
     {
         return m_sz.cx;
     }
 
-    UINT SBitmap_GDI::Height()
+    UINT SBitmap_GDI::Height() const
     {
         return m_sz.cy;
     }
 
-    SIZE SBitmap_GDI::Size()
+    SIZE SBitmap_GDI::Size() const
     {
         return m_sz;
     }
@@ -156,6 +156,13 @@ namespace SOUI
 
     }
 
+    const LPVOID SBitmap_GDI::GetPixelBits() const
+    {
+        BITMAP bm;
+        GetObject(m_hBmp,sizeof(bm),&bm);
+        return bm.bmBits;
+    }
+
     //////////////////////////////////////////////////////////////////////////
     //	SRegion_GDI
     SRegion_GDI::SRegion_GDI( IRenderFactory *pRenderFac )
@@ -164,11 +171,45 @@ namespace SOUI
         m_hRgn = ::CreateRectRgn(0,0,0,0);
     }
 
+    /*
+    int CombineRgn(  HRGN hrgnDest,      // handle to destination region
+    HRGN hrgnSrc1,      // handle to source region
+    HRGN hrgnSrc2,      // handle to source region
+    int fnCombineMode   // region combining mode);
+    
+    RGN_AND Creates the intersection of the two combined regions. 
+    RGN_COPY Creates a copy of the region identified by hrgnSrc1. 
+    RGN_DIFF Combines the parts of hrgnSrc1 that are not part of hrgnSrc2. 
+    RGN_OR Creates the union of two combined regions. 
+    RGN_XOR Creates the union of two combined regions except for any overlapping areas. 
+    
+    注意 RGN_DIFF 和 RGN_COPY对于hrgnSrc1的使用差异
+    */
     void SRegion_GDI::CombineRect( LPCRECT lprect,int nCombineMode )
     {
         HRGN hRgn=::CreateRectRgnIndirect(lprect);
-        ::CombineRgn(m_hRgn,m_hRgn,hRgn,nCombineMode);
+        _CombineRgn(hRgn,nCombineMode);
         DeleteObject(hRgn);
+    }
+
+    void SRegion_GDI::CombineRgn(const IRegion * pRgnSrc,int nCombineMode)
+    {
+        const SRegion_GDI *pRgnSrcGdi = (const SRegion_GDI*)pRgnSrc;
+        HRGN hRgn = pRgnSrcGdi->GetRegion();
+        _CombineRgn(hRgn,nCombineMode);
+    }
+
+
+    void SRegion_GDI::_CombineRgn(HRGN hRgn,int nCombineMode)
+    {
+        if(nCombineMode == RGN_DIFF)
+        {
+            ::CombineRgn(m_hRgn,m_hRgn,hRgn,RGN_DIFF);
+        }else
+        {
+            ::CombineRgn(m_hRgn,hRgn,m_hRgn,nCombineMode);
+        }
+
     }
 
     BOOL SRegion_GDI::PtInRegion( POINT pt )
@@ -205,7 +246,7 @@ namespace SOUI
         return m_hRgn;
     }
 
-    void SRegion_GDI::SetRegion( const HRGN  rgn )
+    void SRegion_GDI::SetRgn( const HRGN  rgn )
     {
         ::CombineRgn(m_hRgn,rgn,NULL,RGN_COPY);
     }
@@ -214,7 +255,7 @@ namespace SOUI
     {
         ::SetRectRgn(m_hRgn,0,0,0,0);
     }
-    
+
     //////////////////////////////////////////////////////////////////////////
     //  DCBuffer
     //////////////////////////////////////////////////////////////////////////
@@ -311,27 +352,22 @@ namespace SOUI
         m_hdc = CreateCompatibleDC(hdc);
         ::ReleaseDC(NULL,hdc);
         ::SetBkMode(m_hdc,TRANSPARENT);
-        
-        CAutoRefPtr<IPen> pPen;
-        CreatePen(PS_SOLID,SColor(0,0,0).toCOLORREF(),1,&pPen);
-        SelectObject(pPen);
+        ::SetGraphicsMode(m_hdc,GM_ADVANCED);
+        CreatePen(PS_SOLID,SColor(0,0,0).toCOLORREF(),1,&m_defPen);
+        SelectObject(m_defPen);
 
-        CAutoRefPtr<IBrush> pBr;
-        CreateSolidColorBrush(SColor(0,0,0).toCOLORREF(),&pBr);
-        SelectObject(pBr);
+        CreateSolidColorBrush(SColor(0,0,0).toCOLORREF(),&m_defBrush);
+        SelectObject(m_defBrush);
 
-        CAutoRefPtr<IFont> pFont;
         LOGFONT lf={0};
         lf.lfHeight=20;
         _tcscpy(lf.lfFaceName,_T("宋体"));
-        pRenderFactory->CreateFont(&pFont,lf);
-        SelectObject(pFont);
+        pRenderFactory->CreateFont(&m_defFont,lf,NULL);
+        SelectObject(m_defFont);
 
-        CAutoRefPtr<IBitmap> pBmp;
-        GetRenderFactory_GDI()->CreateBitmap(&pBmp);
-        pBmp->Init(nWid,nHei);
-        SelectObject(pBmp);
-
+        GetRenderFactory_GDI()->CreateBitmap(&m_defBmp);
+        m_defBmp->Init(nWid,nHei);
+        SelectObject(m_defBmp);
     }
 
     SRenderTarget_GDI::~SRenderTarget_GDI()
@@ -433,6 +469,8 @@ namespace SOUI
     {
         SRegion_GDI *pRgn=new SRegion_GDI(GetRenderFactory_GDI());
         ::GetClipRgn(m_hdc,pRgn->GetRegion());
+        POINT pt={-m_ptOrg.x,-m_ptOrg.y};
+        pRgn->Offset(pt);
         *ppRegion = pRgn;
         return S_OK;
     }
@@ -476,6 +514,7 @@ namespace SOUI
 
     HRESULT SRenderTarget_GDI::MeasureText( LPCTSTR pszText,int cchLen, SIZE *psz )
     {
+        if(cchLen<0) cchLen = _tcslen(pszText);
         ::GetTextExtentPoint32(m_hdc,pszText,cchLen,psz);
         return S_OK;
     }
@@ -508,7 +547,7 @@ namespace SOUI
     {
         DCBuffer dcBuf(m_hdc,pRect,GetAValue(m_curPen->GetColor()));
         HGDIOBJ oldBr=::SelectObject(dcBuf,GetStockObject(NULL_BRUSH));
-        ::RoundRect(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom,pt.x,pt.y);
+        ::RoundRect(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom,pt.x*2,pt.y*2);
         ::SelectObject(dcBuf,oldBr);
         return S_OK;
     }
@@ -523,6 +562,15 @@ namespace SOUI
         ::RoundRect(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom,pt.x,pt.y);
         ::SelectObject(dcBuf,oldPen);
         return S_OK;
+    }
+
+    HRESULT SRenderTarget_GDI::FillSolidRoundRect(LPCRECT pRect,POINT pt,COLORREF cr)
+    {
+        DCBuffer dcBuf(m_hdc,pRect,GetAValue(cr),FALSE);
+        HBRUSH br=::CreateSolidBrush(cr&0x00ffffff);
+        ::RoundRect(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom,pt.x,pt.y);
+        ::DeleteObject(br);
+        return S_OK;    
     }
 
     HRESULT SRenderTarget_GDI::DrawLines(LPPOINT pPt,size_t nCount)
@@ -549,6 +597,7 @@ namespace SOUI
 
     HRESULT SRenderTarget_GDI::TextOut( int x, int y, LPCTSTR lpszString, int nCount)
     {
+        if(nCount<0) nCount = _tcslen(lpszString);
         SIZE sz;
         MeasureText(lpszString,nCount,&sz);
         RECT rc={x,y,x+sz.cx,y+sz.cy};
@@ -557,7 +606,28 @@ namespace SOUI
 
     HRESULT SRenderTarget_GDI::DrawIconEx( int xLeft, int yTop, HICON hIcon, int cxWidth,int cyWidth,UINT diFlags )
     {
+        ICONINFO ii={0};
+        ::GetIconInfo(hIcon,&ii);
+        SASSERT(ii.hbmColor);
+        BITMAP bm;
+        ::GetObject(ii.hbmColor,sizeof(bm),&bm);
+        
+        ALPHAINFO ai;
+        RECT rc={xLeft,yTop,xLeft+cxWidth,yTop+cyWidth};
+        if(bm.bmBitsPixel!=32)
+        {
+            CGdiAlpha::AlphaBackup(m_hdc,&rc,ai);
+        }
         BOOL bRet=::DrawIconEx(m_hdc,xLeft,yTop,hIcon,cxWidth,cyWidth,0,NULL,diFlags);
+        
+        if(bm.bmBitsPixel!=32)
+        {
+            CGdiAlpha::AlphaRestore(ai);
+        }
+        
+        if(ii.hbmColor) DeleteObject(ii.hbmColor);
+        if(ii.hbmMask) DeleteObject(ii.hbmMask);
+        
         return bRet?S_OK:S_FALSE;
     }
 
@@ -567,10 +637,12 @@ namespace SOUI
         HBITMAP bmp=pBmp->GetBitmap();
         HDC hmemdc=CreateCompatibleDC(m_hdc);
         ::SelectObject(hmemdc,bmp);
-
+        SIZE szBmp = pBmp->Size();
+        
         BLENDFUNCTION bf={ AC_SRC_OVER,0,byAlpha,AC_SRC_ALPHA};
-        int nWid=pRcDest->right-pRcDest->left;
-        int nHei=pRcDest->bottom-pRcDest->top;
+        int nWid= min(pRcDest->right-pRcDest->left,szBmp.cx);
+        int nHei= min(pRcDest->bottom-pRcDest->top,szBmp.cy);
+        
         BOOL bOK=::AlphaBlend(m_hdc,pRcDest->left,pRcDest->top,nWid,nHei,
                    hmemdc,xSrc,ySrc,nWid,nHei,bf);
         DeleteDC(hmemdc);
@@ -588,9 +660,11 @@ namespace SOUI
         return bOK?S_OK:E_FAIL;
     }
 
-    HRESULT SRenderTarget_GDI::DrawBitmapEx( LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,EXPEND_MODE expendMode, BYTE byAlpha/*=0xFF*/ )
+    HRESULT SRenderTarget_GDI::DrawBitmapEx( LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,UINT expendMode, BYTE byAlpha/*=0xFF*/ )
     {
-        if(expendMode == EM_NULL)
+        UINT expandModeLow = LOWORD(expendMode);
+        
+        if(expandModeLow == EM_NULL)
             return DrawBitmap(pRcDest,pBitmap,pRcSrc->left,pRcSrc->top,byAlpha);
 
         SBitmap_GDI *pBmp = (SBitmap_GDI*)pBitmap;
@@ -599,7 +673,7 @@ namespace SOUI
         ::SelectObject(hmemdc,bmp);
 
         BLENDFUNCTION bf={ AC_SRC_OVER,0,byAlpha,AC_SRC_ALPHA};
-        if(expendMode == EM_STRETCH)
+        if(expandModeLow == EM_STRETCH)
         {
             ::AlphaBlend(m_hdc,pRcDest->left,pRcDest->top,pRcDest->right-pRcDest->left,pRcDest->bottom-pRcDest->top,
                 hmemdc,pRcSrc->left,pRcSrc->top,pRcSrc->right-pRcSrc->left,pRcSrc->bottom-pRcSrc->top,bf);
@@ -626,7 +700,7 @@ namespace SOUI
     }
 
 
-    HRESULT SRenderTarget_GDI::DrawBitmap9Patch( LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,LPCRECT pRcSourMargin,EXPEND_MODE expendMode,BYTE byAlpha/*=0xFF*/ )
+    HRESULT SRenderTarget_GDI::DrawBitmap9Patch( LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,LPCRECT pRcSourMargin,UINT expendMode,BYTE byAlpha/*=0xFF*/ )
     {
         int xDest[4] = {pRcDest->left,pRcDest->left+pRcSourMargin->left,pRcDest->right-pRcSourMargin->right,pRcDest->right};
         int xSrc[4] = {pRcSrc->left,pRcSrc->left+pRcSourMargin->left,pRcSrc->right-pRcSourMargin->right,pRcSrc->right};
@@ -678,7 +752,7 @@ namespace SOUI
         }
 
         //定义绘制模式
-        EXPEND_MODE mode[3][3]={
+        UINT mode[3][3]={
             {EM_NULL,expendMode,EM_NULL},
             {expendMode,expendMode,expendMode},
             {EM_NULL,expendMode,EM_NULL}
@@ -718,6 +792,22 @@ namespace SOUI
             break;
         }
         return pRet;
+    }
+
+    HRESULT SRenderTarget_GDI::SelectDefaultObject(OBJTYPE objType, IRenderObj ** ppOldObj)
+    {
+        IRenderObj *pDefObj = NULL;
+        switch(objType)
+        {
+        case OT_BITMAP: pDefObj = m_defBmp;break;
+        case OT_PEN: pDefObj = m_defPen;break;
+        case OT_BRUSH: pDefObj = m_defBrush;break;
+        case OT_FONT: pDefObj = m_defFont;break;
+        default:return E_INVALIDARG;
+        }
+        if(pDefObj == GetCurrentObject(objType)) 
+            return S_FALSE;
+        return SelectObject(pDefObj,ppOldObj);
     }
 
     HRESULT SRenderTarget_GDI::SelectObject( IRenderObj *pObj,IRenderObj ** ppOldObj /*= NULL*/ )
@@ -842,7 +932,12 @@ namespace SOUI
         ::DeleteObject(hBmp);
         return S_OK;    
     }
-    
+
+    HRESULT SRenderTarget_GDI::InvertRect(LPCRECT pRect)
+    {
+        return ::InvertRect(m_hdc,pRect)?S_OK:E_UNEXPECTED;
+    }
+
     HRESULT SRenderTarget_GDI::DrawEllipse( LPCRECT pRect )
     {
         DCBuffer dcBuf(m_hdc,pRect,GetAValue(m_curPen->GetColor()));
@@ -858,7 +953,16 @@ namespace SOUI
         ::Ellipse(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom);
         return S_OK;
     }
-    
+
+    HRESULT SRenderTarget_GDI::FillSolidEllipse(LPCRECT pRect,COLORREF cr)
+    {
+        DCBuffer dcBuf(m_hdc,pRect,GetAValue(cr),FALSE);
+        HBRUSH br=::CreateSolidBrush(cr&0x00ffffff);
+        ::Ellipse(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom);
+        ::DeleteObject(br);
+        return S_OK;    
+    }
+
     const float PI = 3.1415926f;
 
     HRESULT SRenderTarget_GDI::DrawArc( LPCRECT pRect,float startAngle,float sweepAngle,bool useCenter )
@@ -902,6 +1006,22 @@ namespace SOUI
         ::Chord(dcBuf,pRect->left,pRect->top,pRect->right,pRect->bottom,pt1.x,pt1.y,pt2.x,pt2.y);
         ::SelectObject(dcBuf,oldPen);
         return S_OK;
+    }
+
+    HRESULT SRenderTarget_GDI::SetTransform(const IxForm * pXForm,IxForm *pOldXFrom/*=NULL*/)
+    {
+        const XFORM * pXFormGDI = (const XFORM*)pXForm;
+        if(pOldXFrom)
+        {
+            GetTransform(pOldXFrom);
+        }
+        return ::SetWorldTransform(m_hdc,pXFormGDI)?S_OK:E_FAIL;
+    }
+
+    HRESULT SRenderTarget_GDI::GetTransform(IxForm * pXForm) const
+    {
+        XFORM * pXFormGDI = (XFORM*)pXForm;
+        return ::GetWorldTransform(m_hdc,pXFormGDI)?S_OK:E_FAIL;
     }
 
 

@@ -29,7 +29,7 @@ namespace SOUI
         }
         
 		virtual BOOL CreateRenderTarget(IRenderTarget ** ppRenderTarget,int nWid,int nHei);
-        virtual BOOL CreateFont(IFont ** ppFont , const LOGFONT &lf);
+        virtual BOOL CreateFont(IFont ** ppFont , const LOGFONT &lf,LPCTSTR pszPropEx);
         virtual BOOL CreateBitmap(IBitmap ** ppBitmap);
         virtual BOOL CreateRegion(IRegion **ppRgn);
         
@@ -51,6 +51,8 @@ namespace SOUI
 		{
 
 		}
+
+        virtual ~TSkiaRenderObjImpl(){}
 
 		virtual IRenderFactory * GetRenderFactory() const
 		{
@@ -100,26 +102,10 @@ namespace SOUI
 	class SFont_Skia: public TSkiaRenderObjImpl<IFont>
 	{
 	public:
-		SFont_Skia(IRenderFactory * pRenderFac,const LOGFONT * plf)
-			:TSkiaRenderObjImpl<IFont>(pRenderFac),m_skFont(NULL)
-		{
-		    memcpy(&m_lf,plf,sizeof(LOGFONT));
-            SStringA strFace=S_CT2A(plf->lfFaceName,CP_UTF8);
-            BYTE style=SkTypeface::kNormal;
-            if(plf->lfItalic) style |= SkTypeface::kItalic;
-            if(plf->lfWeight == FW_BOLD) style |= SkTypeface::kBold;
-            
-            m_skFont=SkTypeface::CreateFromName(strFace,(SkTypeface::Style)style);
-            
-            m_skPaint.setTextSize(SkIntToScalar(abs(plf->lfHeight)));
-            m_skPaint.setUnderlineText(!!plf->lfUnderline);
-            m_skPaint.setStrikeThruText(!!plf->lfStrikeOut);
+		SFont_Skia(IRenderFactory * pRenderFac,const LOGFONT * plf,LPCTSTR pszPropEx);
 
-            m_skPaint.setTextEncoding(SkPaint::kUTF16_TextEncoding);
-            m_skPaint.setAntiAlias(true);
-            m_skPaint.setLCDRenderText(true);
-            
-		}
+        virtual ~SFont_Skia();
+
         virtual const LOGFONT * LogFont() const {return &m_lf;}
 
         virtual LPCTSTR FamilyName()
@@ -179,27 +165,20 @@ namespace SOUI
 	class SBitmap_Skia : public TSkiaRenderObjImpl<IBitmap>
 	{
 	public:
-		SBitmap_Skia(IRenderFactory *pRenderFac)
-			:TSkiaRenderObjImpl<IBitmap>(pRenderFac),m_hBmp(0)
-		{
-
-		}
-        ~SBitmap_Skia()
-        {
-            m_bitmap.reset();
-            if(m_hBmp) DeleteObject(m_hBmp);
-        }
+		SBitmap_Skia(IRenderFactory *pRenderFac);
+        ~SBitmap_Skia();
 
 		virtual HRESULT Init(int nWid,int nHei,const LPVOID pBits=NULL);
         virtual HRESULT Init(IImgFrame *pFrame);
-		virtual HRESULT LoadFromFile(LPCTSTR pszFileName,LPCTSTR pszType);
-		virtual HRESULT LoadFromMemory(LPBYTE pBuf,size_t szLen,LPCTSTR pszType);
+		virtual HRESULT LoadFromFile(LPCTSTR pszFileName);
+		virtual HRESULT LoadFromMemory(LPBYTE pBuf,size_t szLen);
 
-        virtual UINT Width();
-        virtual UINT Height();
-        virtual SIZE Size();
+        virtual UINT Width() const;
+        virtual UINT Height() const;
+        virtual SIZE Size() const;
         virtual LPVOID  LockPixelBits();
         virtual void    UnlockPixelBits(LPVOID);
+        virtual const LPVOID  GetPixelBits() const;
         
 		SkBitmap & GetSkBitmap(){return m_bitmap;}
 		HBITMAP  GetGdiBitmap(){return m_hBmp;}
@@ -218,7 +197,11 @@ namespace SOUI
 	{
 	public:
 		SRegion_Skia(IRenderFactory *pRenderFac);
+        virtual ~SRegion_Skia();
+
 		virtual void CombineRect(LPCRECT lprect,int nCombineMode);
+        virtual void CombineRgn(const IRegion * pRgnSrc,int nCombineMode );
+        virtual void SetRgn(const HRGN hRgn);
 		virtual BOOL PtInRegion(POINT pt);
 		virtual BOOL RectInRegion(LPCRECT lprect);
 		virtual void GetRgnBox(LPRECT lprect);
@@ -281,15 +264,19 @@ namespace SOUI
 		virtual HRESULT FillRectangle(LPCRECT pRect);
         virtual HRESULT FillSolidRect(LPCRECT pRect,COLORREF cr);
         virtual HRESULT ClearRect(LPCRECT pRect,COLORREF cr);
+        virtual HRESULT InvertRect(LPCRECT pRect);
 
         virtual HRESULT DrawEllipse(LPCRECT pRect);
         virtual HRESULT FillEllipse(LPCRECT pRect);
+        virtual HRESULT FillSolidEllipse(LPCRECT pRect,COLORREF cr);
 
         virtual HRESULT DrawArc(LPCRECT pRect,float startAngle,float sweepAngle,bool useCenter);
         virtual HRESULT FillArc(LPCRECT pRect,float startAngle,float sweepAngle);
 
         virtual HRESULT DrawRoundRect(LPCRECT pRect,POINT pt);
         virtual HRESULT FillRoundRect(LPCRECT pRect,POINT pt);
+        virtual HRESULT FillSolidRoundRect(LPCRECT pRect,POINT pt,COLORREF cr);
+
         virtual HRESULT DrawLines(LPPOINT pPt,size_t nCount);
         virtual HRESULT GradientFill(LPCRECT pRect,BOOL bVert,COLORREF crBegin,COLORREF crEnd,BYTE byAlpha=0xFF);
         virtual HRESULT GradientFillEx( LPCRECT pRect,const POINT* pts,COLORREF *colors,float *pos,int nCount,BYTE byAlpha=0xFF );
@@ -302,10 +289,11 @@ namespace SOUI
 
         virtual HRESULT DrawIconEx(int xLeft, int yTop, HICON hIcon, int cxWidth,int cyWidth,UINT diFlags);
         virtual HRESULT DrawBitmap(LPCRECT pRcDest,IBitmap *pBitmap,int xSrc,int ySrc,BYTE byAlpha=0xFF);
-        virtual HRESULT DrawBitmapEx(LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,EXPEND_MODE expendMode, BYTE byAlpha=0xFF);
-        virtual HRESULT DrawBitmap9Patch(LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,LPCRECT pRcSourMargin,EXPEND_MODE expendMode,BYTE byAlpha=0xFF);
+        virtual HRESULT DrawBitmapEx(LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,UINT expendMode, BYTE byAlpha=0xFF);
+        virtual HRESULT DrawBitmap9Patch(LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,LPCRECT pRcSourMargin,UINT expendMode,BYTE byAlpha=0xFF);
 
 		virtual IRenderObj * GetCurrentObject(OBJTYPE uType);
+        virtual HRESULT SelectDefaultObject(OBJTYPE uType,IRenderObj ** ppOldObj = NULL);
         virtual HRESULT SelectObject(IRenderObj *pObj,IRenderObj ** ppOldObj = NULL);
 
 
@@ -326,8 +314,14 @@ namespace SOUI
 
         virtual HRESULT QueryInterface(REFGUID iid,IObjRef ** ppObj);
         
+        virtual HRESULT SetTransform(const IxForm * pXForm,IxForm *pOldXFrom=NULL);
+
+        virtual HRESULT GetTransform(IxForm * pXForm) const;
+
     public:
         SkCanvas *GetCanvas(){return m_SkCanvas;}
+
+
     protected:
 		SkCanvas *m_SkCanvas;
         SColor            m_curColor;
@@ -338,6 +332,12 @@ namespace SOUI
     
         SkPoint         m_ptOrg;
         
+        //注意保存4个默认的RenderObject对象
+        CAutoRefPtr<IBitmap> m_defBmp;
+        CAutoRefPtr<IPen> m_defPen;
+        CAutoRefPtr<IBrush> m_defBrush;
+        CAutoRefPtr<IFont> m_defFont;
+
         HDC m_hGetDC;
         UINT m_uGetDCFlag;
 	};

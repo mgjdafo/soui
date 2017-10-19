@@ -25,7 +25,7 @@ namespace SOUI
         virtual IImgDecoderFactory * GetImgDecoderFactory(){return m_imgDecoderFactory;}
         virtual void SetImgDecoderFactory(IImgDecoderFactory *pImgDecoderFac){ m_imgDecoderFactory=pImgDecoderFac;}
         virtual BOOL CreateRenderTarget(IRenderTarget ** ppRenderTarget,int nWid,int nHei);
-        virtual BOOL CreateFont(IFont ** ppFont , const LOGFONT &lf);
+        virtual BOOL CreateFont(IFont ** ppFont , const LOGFONT &lf,LPCTSTR pszPropEx);
         virtual BOOL CreateBitmap(IBitmap ** ppBitmap);
         virtual BOOL CreateRegion(IRegion **ppRgn);
 
@@ -44,6 +44,8 @@ namespace SOUI
         {
 
         }
+        
+        virtual ~TGdiRenderObjImpl(){}
 
         virtual IRenderFactory * GetRenderFactory() const
         {
@@ -101,7 +103,7 @@ namespace SOUI
     class SFont_GDI: public TGdiRenderObjImpl<IFont>
     {
     public:
-        SFont_GDI(IRenderFactory * pRenderFac,const LOGFONT * plf)
+        SFont_GDI(IRenderFactory * pRenderFac,const LOGFONT * plf,LPCTSTR pszPropEx)
             :TGdiRenderObjImpl<IFont>(pRenderFac),m_hFont(NULL)
         {
             memcpy(&m_lf,plf,sizeof(LOGFONT));
@@ -176,7 +178,7 @@ namespace SOUI
     {
     public:
         SBitmap_GDI(IRenderFactory *pRenderFac)
-            :TGdiRenderObjImpl<IBitmap>(pRenderFac),m_hBmp(0),m_nFrameDelay(0)
+            :TGdiRenderObjImpl<IBitmap>(pRenderFac),m_hBmp(0)
         {
             m_sz.cx=m_sz.cy=0;
         }
@@ -186,15 +188,16 @@ namespace SOUI
         }
         virtual HRESULT Init(int nWid,int nHei,const LPVOID pBits=NULL);
         virtual HRESULT Init(IImgFrame *pFrame);
-        virtual HRESULT LoadFromFile(LPCTSTR pszFileName,LPCTSTR pszType);
-        virtual HRESULT LoadFromMemory(LPBYTE pBuf,size_t szLen,LPCTSTR pszType);
+        virtual HRESULT LoadFromFile(LPCTSTR pszFileName);
+        virtual HRESULT LoadFromMemory(LPBYTE pBuf,size_t szLen);
 
-        virtual UINT Width();
-        virtual UINT Height();
-        virtual SIZE Size();
+        virtual UINT Width() const;
+        virtual UINT Height() const;
+        virtual SIZE Size() const;
         virtual LPVOID  LockPixelBits();
         virtual void    UnlockPixelBits(LPVOID);
-
+        virtual const LPVOID GetPixelBits() const;
+        
         HBITMAP  GetBitmap(){return m_hBmp;}
 
         static HBITMAP CreateGDIBitmap(int nWid,int nHei,void ** ppBits);
@@ -203,13 +206,13 @@ namespace SOUI
         HRESULT ImgFromDecoder(IImgX *imgDecoder);
         SIZE        m_sz;
         HBITMAP     m_hBmp;     //标准的32位位图，和m_bitmap共享内存
-        int         m_nFrameDelay;
     };
 
     //////////////////////////////////////////////////////////////////////////
     //	SRegion_GDI
     class SRegion_GDI: public TGdiRenderObjImpl<IRegion>
     {
+    friend class SRenderTarget_GDI;
     public:
         SRegion_GDI(IRenderFactory *pRenderFac);
         ~SRegion_GDI(){
@@ -217,6 +220,9 @@ namespace SOUI
         }
 
         virtual void CombineRect(LPCRECT lprect,int nCombineMode);
+        virtual void CombineRgn(const IRegion * pRgnSrc,int nCombineMode );
+        virtual void SetRgn(const HRGN rgn);
+
         virtual BOOL PtInRegion(POINT pt);
         virtual BOOL RectInRegion(LPCRECT lprect);
         virtual void GetRgnBox(LPRECT lprect);
@@ -224,10 +230,10 @@ namespace SOUI
         virtual void Offset(POINT pt);
         virtual void Clear();
 
-        HRGN GetRegion() const;
-
-        void SetRegion(const HRGN rgn);
     protected:
+        HRGN GetRegion() const;
+        void _CombineRgn(HRGN hRgn,int nCombineMode);
+        
         HRGN    m_hRgn;
     };
 
@@ -276,15 +282,19 @@ namespace SOUI
         virtual HRESULT FillRectangle(LPCRECT pRect);
         virtual HRESULT FillSolidRect(LPCRECT pRect,COLORREF cr);
         virtual HRESULT ClearRect(LPCRECT pRect,COLORREF cr);
+        virtual HRESULT InvertRect(LPCRECT pRect);
 
         virtual HRESULT DrawEllipse(LPCRECT pRect);
         virtual HRESULT FillEllipse(LPCRECT pRect);
+        virtual HRESULT FillSolidEllipse(LPCRECT pRect,COLORREF cr);
 
         virtual HRESULT DrawArc(LPCRECT pRect,float startAngle,float sweepAngle,bool useCenter);
         virtual HRESULT FillArc(LPCRECT pRect,float startAngle,float sweepAngle);
 
         virtual HRESULT DrawRoundRect(LPCRECT pRect,POINT pt);
         virtual HRESULT FillRoundRect(LPCRECT pRect,POINT pt);
+        virtual HRESULT FillSolidRoundRect(LPCRECT pRect,POINT pt,COLORREF cr);
+
         virtual HRESULT DrawLines(LPPOINT pPt,size_t nCount);
         virtual HRESULT GradientFill(LPCRECT pRect,BOOL bVert,COLORREF crBegin,COLORREF crEnd,BYTE byAlpha=0xFF);
         virtual HRESULT GradientFillEx( LPCRECT pRect,const POINT* pts,COLORREF *colors,float *pos,int nCount,BYTE byAlpha=0xFF );
@@ -297,10 +307,11 @@ namespace SOUI
 
         virtual HRESULT DrawIconEx(int xLeft, int yTop, HICON hIcon, int cxWidth,int cyWidth,UINT diFlags);
         virtual HRESULT DrawBitmap(LPCRECT pRcDest,IBitmap *pBitmap,int xSrc,int ySrc,BYTE byAlpha=0xFF);
-        virtual HRESULT DrawBitmapEx(LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,EXPEND_MODE expendMode, BYTE byAlpha=0xFF);
-        virtual HRESULT DrawBitmap9Patch(LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,LPCRECT pRcSourMargin,EXPEND_MODE expendMode,BYTE byAlpha=0xFF);
+        virtual HRESULT DrawBitmapEx(LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,UINT expendMode, BYTE byAlpha=0xFF);
+        virtual HRESULT DrawBitmap9Patch(LPCRECT pRcDest,IBitmap *pBitmap,LPCRECT pRcSrc,LPCRECT pRcSourMargin,UINT expendMode,BYTE byAlpha=0xFF);
 
         virtual IRenderObj * GetCurrentObject(OBJTYPE uType);
+        virtual HRESULT SelectDefaultObject(OBJTYPE objType, IRenderObj ** ppOldObj = NULL);
         virtual HRESULT SelectObject(IRenderObj *pObj,IRenderObj ** ppOldObj = NULL);
 
 
@@ -321,6 +332,11 @@ namespace SOUI
         virtual void ReleaseDC(HDC hdc);
 
         virtual HRESULT QueryInterface(REFGUID iid,IObjRef ** ppObj){ return E_NOTIMPL;}
+
+        virtual HRESULT SetTransform(const IxForm * pXForm,IxForm *pOldXFrom=NULL);
+
+        virtual HRESULT GetTransform(IxForm * pXForm) const;
+
     protected:
         HDC               m_hdc;
         SColor            m_curColor;
@@ -329,6 +345,12 @@ namespace SOUI
         CAutoRefPtr<SBrush_GDI> m_curBrush;
         CAutoRefPtr<SFont_GDI> m_curFont;
         POINT               m_ptOrg;
+        
+        //注意保存4个默认的GDI对象
+        CAutoRefPtr<IBitmap> m_defBmp;
+        CAutoRefPtr<IPen> m_defPen;
+        CAutoRefPtr<IBrush> m_defBrush;
+        CAutoRefPtr<IFont> m_defFont;
 
         UINT m_uGetDCFlag;
     };

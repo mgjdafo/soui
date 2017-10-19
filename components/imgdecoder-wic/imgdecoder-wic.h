@@ -17,7 +17,7 @@ namespace SOUI
     {
     public:
         SImgFrame_WIC(IWICBitmapSource *pFrame=NULL);
-        void SetWICBitmpaSource(IWICBitmapSource *pFrame);
+        void SetWICBitmapSource(IWICBitmapSource *pFrame);
         void SetFrameDelay(int nDelay);
 
         virtual BOOL GetSize(UINT *pWid,UINT *pHei);
@@ -34,7 +34,7 @@ namespace SOUI
     
     class SImgX_WIC : public TObjRefImpl<IImgX>
     {
-        friend class SImgDecoderFactory;
+        friend class SImgDecoderFactory_WIC;
     public:
 
         int LoadFromMemory(void *pBuf,size_t bufLen);
@@ -53,24 +53,24 @@ namespace SOUI
         int _DoDecode(IWICBitmapDecoder * pDecoder);
 
         SImgFrame_WIC *     m_pImgArray;
-        UINT					  m_uImgCount;
-        BOOL m_bPremultiplied;
+        UINT				m_uImgCount;
+        BOOL                m_bPremultiplied;
 
     };
 
-    class SImgDecoderFactory : public TObjRefImpl<IImgDecoderFactory>
+    #define DESC_IMGDECODER L"wic"
+    class SImgDecoderFactory_WIC : public TObjRefImpl<IImgDecoderFactory>
     {
     friend class SImgX_WIC;
     public:
-        SImgDecoderFactory(BOOL bPremultiple);
-        ~SImgDecoderFactory();
+        SImgDecoderFactory_WIC();
+        ~SImgDecoderFactory_WIC();
         
-        virtual BOOL IsAlphaPremultiple(){return m_bPremultple;}
-        virtual void SetAlphaPremultiple(BOOL bPreMultiple){m_bPremultple=bPreMultiple;}
         virtual BOOL CreateImgX(IImgX **ppImgDecoder);
+        HRESULT SaveImage(IBitmap *pImg, LPCWSTR pszFileName, const LPVOID pFormat);
+        LPCWSTR GetDescription() const;
     protected:
         static CAutoRefPtr<IWICImagingFactory> s_wicImgFactory;
-        BOOL    m_bPremultple;
     };
     
     //////////////////////////////////////////////////////////////////////////

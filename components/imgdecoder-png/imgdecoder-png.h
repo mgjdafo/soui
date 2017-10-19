@@ -8,6 +8,7 @@
 #include <unknown/obj-ref-impl.hpp>
 
 #include <interface/imgdecoder-i.h>
+#include <interface/render-i.h>
 
 struct APNGDATA;
 
@@ -59,18 +60,17 @@ namespace SOUI
         SImgFrame_PNG  *    m_pImgArray;
     };
 
+    #define DESC_IMGDECODER L"apng"
     class SImgDecoderFactory_PNG : public TObjRefImpl<IImgDecoderFactory>
     {
     friend class SImgX_PNG;
     public:
-        SImgDecoderFactory_PNG(BOOL bPremultiple=TRUE);
+        SImgDecoderFactory_PNG();
         ~SImgDecoderFactory_PNG();
         
-        virtual BOOL IsAlphaPremultiple(){return m_bPremultple;}
-        virtual void SetAlphaPremultiple(BOOL bPreMultiple){m_bPremultple=bPreMultiple;}
+        virtual HRESULT SaveImage(IBitmap *pImg, LPCWSTR pszFileName, const LPVOID pFormat);
         virtual BOOL CreateImgX(IImgX **ppImgDecoder);
-    protected:
-        BOOL    m_bPremultple;
+        LPCWSTR GetDescription() const;
     };
     
     //////////////////////////////////////////////////////////////////////////

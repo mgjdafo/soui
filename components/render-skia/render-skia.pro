@@ -16,10 +16,10 @@ DEPENDPATH += .
 INCLUDEPATH += . \
 			   ../../soui/include \
 			   ../../utilities/include \
-			   ../skia \
-			   ../skia/include \
-			   ../skia/include/config \
-			   ../skia/include/core \
+			   ../../third-part/skia \
+			   ../../third-part/skia/include \
+			   ../../third-part/skia/include/config \
+			   ../../third-part/skia/include/core \
 
 dir = ../..
 include($$dir/common.pri)
@@ -35,5 +35,5 @@ LIBS += Usp10.lib opengl32.lib
 PRECOMPILED_HEADER = stdafx.h
 
 # Input
-HEADERS += drawtext-skia.h render-skia.h render-skai2-i.h render-skia2.h skia2rop2.h
+HEADERS += drawtext-skia.h render-skia.h render-skia2-i.h render-skia2.h skia2rop2.h
 SOURCES += drawtext-skia.cpp render-skia.cpp render-skia2.cpp skia2rop2.cpp

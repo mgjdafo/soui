@@ -2,7 +2,7 @@
 #include "SWkeWebkit.h"
 #include <Imm.h>
 #pragma comment(lib,"imm32.lib")
-
+#pragma comment(lib,"msimg32.lib")
 namespace SOUI
 {
     //////////////////////////////////////////////////////////////////////////
@@ -69,7 +69,14 @@ namespace SOUI
         CRect rcInvalid;
         rcInvalid.IntersectRect(&rcClip,&rcClient);
         HDC hdc=pRT->GetDC();
-        m_pWebView->paint(hdc,rcInvalid.left,rcInvalid.top,rcInvalid.Width(),rcInvalid.Height(),rcInvalid.left-rcClient.left,rcInvalid.top-rcClient.top,true);
+        if(GetStyle().m_byAlpha!=0xff)
+        {
+            BLENDFUNCTION bf={AC_SRC_OVER,0,GetStyle().m_byAlpha,AC_SRC_ALPHA };
+            AlphaBlend(hdc,rcInvalid.left,rcInvalid.top,rcInvalid.Width(),rcInvalid.Height(),m_pWebView->getViewDC(),rcInvalid.left-rcClient.left,rcInvalid.top-rcClient.top,rcInvalid.Width(),rcInvalid.Height(),bf);
+        }else
+        {
+            BitBlt(hdc,rcInvalid.left,rcInvalid.top,rcInvalid.Width(),rcInvalid.Height(),m_pWebView->getViewDC(),rcInvalid.left-rcClient.left,rcInvalid.top-rcClient.top,SRCCOPY);            
+        }
         pRT->ReleaseDC(hdc);
     }
 
@@ -230,14 +237,16 @@ namespace SOUI
 		return 0;
 	}
 
-	void SWkeWebkit::OnSetFocus()
+	void SWkeWebkit::OnSetFocus(SWND wndOld)
 	{
+	    __super::OnSetCursor(wndOld);
 		m_pWebView->focus();
 	}
 
-	void SWkeWebkit::OnKillFocus()
+	void SWkeWebkit::OnKillFocus(SWND wndFocus)
 	{
 		m_pWebView->unfocus();
+		__super::OnKillFocus(wndFocus);
 	}
 
 	void SWkeWebkit::OnTimer( char cTimerID )

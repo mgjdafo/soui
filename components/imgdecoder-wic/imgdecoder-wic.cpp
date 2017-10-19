@@ -17,7 +17,7 @@ namespace SOUI
 
     }
     
-    void SImgFrame_WIC::SetWICBitmpaSource( IWICBitmapSource *pFrame )
+    void SImgFrame_WIC::SetWICBitmapSource( IWICBitmapSource *pFrame )
     {
         m_pFrame=pFrame;
     }
@@ -68,7 +68,7 @@ namespace SOUI
     {
         SASSERT(m_pImgArray == NULL);
 
-        IWICImagingFactory*    factory    = SImgDecoderFactory::s_wicImgFactory;
+        IWICImagingFactory*    factory    = SImgDecoderFactory_WIC::s_wicImgFactory;
         CAutoRefPtr<IWICBitmapDecoder>     decoder;
         CAutoRefPtr<IWICStream> stream ;
 
@@ -84,7 +84,7 @@ namespace SOUI
     int SImgX_WIC::LoadFromFile( LPCWSTR pszFileName )
     {
         SASSERT(m_pImgArray == NULL);
-        IWICImagingFactory*    factory    = SImgDecoderFactory::s_wicImgFactory;
+        IWICImagingFactory*    factory    = SImgDecoderFactory_WIC::s_wicImgFactory;
 
         CAutoRefPtr<IWICBitmapDecoder>     decoder;
 
@@ -113,7 +113,7 @@ namespace SOUI
     {
         SASSERT(m_uImgCount == 0);
         
-        IWICImagingFactory*    factory    = SImgDecoderFactory::s_wicImgFactory;
+        IWICImagingFactory*    factory    = SImgDecoderFactory_WIC::s_wicImgFactory;
         CAutoRefPtr<IWICFormatConverter> converter;
         if(FAILED(factory->CreateFormatConverter(&converter))) 
             return 0;
@@ -146,16 +146,16 @@ namespace SOUI
                     0.f,WICBitmapPaletteTypeCustom);
                 CAutoRefPtr<IWICBitmapSource> bmp;
                 converter->QueryInterface(IID_PPV_ARGS(&bmp));
-                m_pImgArray[i].SetWICBitmpaSource(bmp);
+                m_pImgArray[i].SetWICBitmapSource(bmp);
             }
         }
         return m_uImgCount;
     }
 
     //////////////////////////////////////////////////////////////////////////
-    CAutoRefPtr<IWICImagingFactory> SImgDecoderFactory::s_wicImgFactory;
+    CAutoRefPtr<IWICImagingFactory> SImgDecoderFactory_WIC::s_wicImgFactory;
 
-    SImgDecoderFactory::SImgDecoderFactory(BOOL bPremultiple):m_bPremultple(bPremultiple)
+    SImgDecoderFactory_WIC::SImgDecoderFactory_WIC()
     {
         HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory,NULL,
             CLSCTX_INPROC_SERVER,IID_PPV_ARGS(&s_wicImgFactory));
@@ -163,23 +163,33 @@ namespace SOUI
         SASSERT(SUCCEEDED(hr));
     }
 
-    SImgDecoderFactory::~SImgDecoderFactory()
+    SImgDecoderFactory_WIC::~SImgDecoderFactory_WIC()
     {
         if(s_wicImgFactory) s_wicImgFactory = NULL;
     }
 
-    BOOL SImgDecoderFactory::CreateImgX(IImgX ** ppImgDecoder)
+    BOOL SImgDecoderFactory_WIC::CreateImgX(IImgX ** ppImgDecoder)
     {
-        *ppImgDecoder = new SImgX_WIC(m_bPremultple);
+        *ppImgDecoder = new SImgX_WIC(TRUE);
         return TRUE;
     }
     
+    HRESULT SImgDecoderFactory_WIC::SaveImage(IBitmap *pImg, LPCWSTR pszFileName, const LPVOID pFormat)
+    {
+        return E_FAIL;
+    }
+
+    LPCWSTR SImgDecoderFactory_WIC::GetDescription() const
+    {
+        return DESC_IMGDECODER;
+    }
+
     //////////////////////////////////////////////////////////////////////////
     namespace IMGDECODOR_WIC
     {
         BOOL SCreateInstance(IObjRef **pImgDecoderFactory)
         {
-            *pImgDecoderFactory = new SImgDecoderFactory(TRUE);
+            *pImgDecoderFactory = new SImgDecoderFactory_WIC();
             return TRUE;
         }
     }

@@ -167,9 +167,12 @@ namespace SOUI
         {
             SStrMap ** pMap=(SStrMap**)bsearch(&strSrc,(*pEntry)->m_arrStrMap.GetData(),(*pEntry)->m_arrStrMap.GetCount(),sizeof(SStrMap*),SStrMap::CompareInSearch);
             if(pMap)
-            {
+            {//从指定的上下文中查找翻译
                 strRet=(*pMap)->strTranslation;
                 return TRUE;
+            }else if(!strCtx.IsEmpty())
+            {//从空白上下文中查找
+                return tr(strSrc,SStringW(),strRet);
             }
         }
         return FALSE;
@@ -180,7 +183,7 @@ namespace SOUI
     //  STranslator
     BOOL STranslatorMgr::InstallTranslator(ITranslator *pTranslator)
     {
-        POSITION pos=m_lstLang->GetHeadPosition();
+        SPOSITION pos=m_lstLang->GetHeadPosition();
         while(pos)
         {
             ITranslator *p=m_lstLang->GetNext(pos);
@@ -196,10 +199,10 @@ namespace SOUI
 
     BOOL STranslatorMgr::UninstallTranslator(REFGUID id)
     {
-        POSITION pos=m_lstLang->GetHeadPosition();
+        SPOSITION pos=m_lstLang->GetHeadPosition();
         while(pos)
         {
-            POSITION posBackup=pos;
+            SPOSITION posBackup=pos;
             ITranslator *p=m_lstLang->GetNext(pos);
             if(IsEqualGUID(id,p->guid()))
             {
@@ -218,7 +221,7 @@ namespace SOUI
 
     STranslatorMgr::~STranslatorMgr( void )
     {
-        POSITION pos=m_lstLang->GetHeadPosition();
+        SPOSITION pos=m_lstLang->GetHeadPosition();
         while(pos)
         {
             ITranslator *pLang=m_lstLang->GetNext(pos);
@@ -231,7 +234,7 @@ namespace SOUI
     {
         if(strSrc.IsEmpty()) return strSrc;
         SStringW strRet;
-        POSITION pos=m_lstLang->GetHeadPosition();
+        SPOSITION pos=m_lstLang->GetHeadPosition();
         while(pos)
         {
             ITranslator *pLang=m_lstLang->GetNext(pos);
